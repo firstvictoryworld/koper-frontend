@@ -1,0 +1,25 @@
+export default {
+  structures: {
+    registrations: {
+      title: 'Lista strutture',
+      subtitle: 'Visualizza l\'elenco delle strutture convenzionate o da convenzionare.',
+      id: '#',
+      status: 'Stato',
+      business_name: 'Ragione sociale',
+      fiscal_code: 'Cod. Fiscale',
+      vat_number: 'P. IVA',
+    },
+    edit: {
+      title: 'Dati struttura',
+      reject: 'Respingi',
+      activate: 'Attiva',
+      confirmActivation: 'Si conferma di voler approvare la richiesta?',
+      confirmRejection: 'Si conferma di voler respingere la richiesta?',
+      approvedMessage: 'La richiesta di iscrizione della struttura è stata approvata!',
+      rejectedMessage: 'La richiesta di iscrizione della struttura è stata respinta!',
+    },
+    autocomplete: {
+      label: 'Struttura'
+    }
+  }
+}
