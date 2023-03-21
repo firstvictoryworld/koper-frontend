@@ -127,7 +127,7 @@ const emit = defineEmits(['loaded']);
 const [isLoading, toggleLoading] = useToggle()
 
 // Watchers
-const unwatchSearch = watch(() => table.search, debounce(() => { loadData() }, 600))
+const unwatchSearch = watch(() => table.search, debounce(() => { table.page = 1; loadData() }, 600))
 const unwatchPage = watch(() => table.page, () => { loadData() })
 
 // Computed
