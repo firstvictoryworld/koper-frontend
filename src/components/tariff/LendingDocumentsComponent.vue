@@ -199,12 +199,12 @@ const handleSubmit = async () => {
   toggleLoading()
 }
 
-const remove = (row: DocumentInterface) => {
+const remove = async (row: DocumentInterface) => {
   toggleDelete()
 
   const url = baseUrl.value + `/${row.id}`
 
-  $axios?.delete(url)
+  await $axios?.delete(url)
     .then(() => {
       refTable.value?.loadData()
     })

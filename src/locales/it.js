@@ -16,7 +16,7 @@ import specializations from './it-IT/specializations'
 import lendings from './it-IT/lendings'
 import bookings from './it-IT/bookings'
 import reconciliations from './it-IT/reconciliations'
-import certification from './it-IT/certification'
+import certifications from './it-IT/certifications'
 import agreementDeed from './it-IT/agreement-deed'
 import registry from './it-IT/structure-registry'
 import users from './it-IT/users'
@@ -42,7 +42,7 @@ export default {
   ...lendings,
   ...bookings,
   ...reconciliations,
-  ...certification,
+  ...certifications,
   ...agreementDeed,
   ...registry,
   ...users

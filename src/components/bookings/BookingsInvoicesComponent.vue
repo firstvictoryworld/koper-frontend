@@ -4,7 +4,21 @@
     :title="$t('bookings.edit.invoices.title')"
     :no-padding="true"
   >
-    <DataTable ref="refTable" :cols="cols" :url="`/bookings/${props.bookingId}/invoices`" local-prefix="bookings.edit.invoices." total-title="Totale Fatture" total-column="amount">
+    <DataTable
+      ref="refTable"
+      :cols="cols"
+      :url="`/bookings/${props.bookingId}/invoices`"
+      local-prefix="bookings.edit.invoices."
+      @loaded="(data) => table.data = data"
+    >
+      <template #subheader>
+        <div v-show="!completed" class="px-5">
+          <v-alert type="warning">
+            {{ $t('bookings.errors.missingDoc') }}
+          </v-alert>
+        </div>
+      </template>
+
       <template #header>
         <v-btn v-if="!readonly" type="button" size="large" color="koperniko-primary" @click.prevent="() => add()">
           {{ $t('add') }}
@@ -24,7 +38,27 @@
       </template>
 
       <template #col-amount="{ row }">
-        € {{ row.booking_file_invoice?.amount }}
+        {{ row.booking_file_invoice?.amount }}
+      </template>
+
+      <template #col-stamp="{ row }">
+        {{ row.booking_file_invoice?.stamp }}
+      </template>
+
+      <template #totals>
+        <div class="text-right">
+          <hr class="my-3" />
+
+          <div v-if="stampCount" class="mb-1">
+            <strong class="mr-3">Bollo non rimborsabile</strong>
+            <strong class="mr-3">n° {{ stampCount }} </strong> <b >Totale: € {{ stampValue }} </b>
+          </div>
+
+          <div class="mt-1 text-right">
+            <strong class="mr-3">Totale Fatture</strong>
+            <strong>€ {{ totAmount }} </strong>
+          </div>
+        </div>
       </template>
     </DataTable>
   </CardContainer>
@@ -122,7 +156,7 @@ import { axiosInjectKey } from '@/utils/axios'
 import { codFiscaleOrPivaValidation, currencyValidation, pivaValidation, requiredValidation } from '@/validation/rules'
 import { useToggle } from '@vueuse/shared'
 import { serialize } from 'object-to-formdata'
-import { inject, reactive, ref, computed, type GlobalComponents, type Ref } from 'vue'
+import { inject, reactive, ref, computed, type GlobalComponents, type Ref, onBeforeUnmount, watch } from 'vue'
 import type { VInput } from 'vuetify/lib/components/VInput/index'
 import CardContainer from '../common/CardContainer.vue'
 import DataTable from '../common/DataTable.vue'
@@ -150,6 +184,10 @@ const [isLoading, toggleLoading] = useToggle()
 const [isDownloading, toggleDownload] = useToggle()
 const [isDeleting, toggleDelete] = useToggle()
 
+const readonlyAction = reactive({
+  value: false
+})
+
 // Data
 const cols = reactive([
   { key: 'id' },
@@ -157,10 +195,12 @@ const cols = reactive([
   { key: 'date' },
   { key: 'type' },
   { key: 'amount' },
+  { key: 'stamp' },
   { label: '', key: '', actions:
     [
-      { icon: 'mdi-download', handler(row: FileInterface) { download(row) }, btnProps: { loading: isDownloading, class: 'mr-3' } },
-      { icon: 'mdi-delete', handler(row: FileInterface) { remove(row) }, color: 'red', btnProps: { loading: isDeleting, disabled: !!props.readonly } },
+      { icon: 'mdi-download', handler(row: FileInterface) { download(row) }, btnProps: { loading: isDownloading, class: 'mr-3' }, show: (row) => row.filename  },
+      { icon: 'mdi-upload', handler(row: FileInterface) { show(row) }, color: 'yellow', btnProps: { loading: isDownloading, class: 'mr-3', disabled: readonlyAction.value }, show: (row) => !row.filename },
+      { icon: 'mdi-delete', handler(row: FileInterface) { remove(row) }, color: 'red', btnProps: { loading: isDeleting, disabled: readonlyAction.value } }
     ]
   },
 ] as DatatableColInterface[])
@@ -178,12 +218,13 @@ const invoiceTypeOpt = reactive([
 ])
 
 const sameIssuerOptions = [
-  { label: i18n.t('yes'), value: 1 },
-  { label: i18n.t('no'), value: 0 },
+  { label: i18n.t('yes'), value: 0 },
+  { label: i18n.t('no'), value: 1 },
 ]
 
 const dialog = reactive({ 
   show: false,
+  id: undefined as undefined | number,
   fields: {
     number: { value: undefined, binds: { rules: [requiredValidation], type: 'text', ...defaultInputBinds } },
     date: { value: undefined, binds: { rules: [requiredValidation], type: 'date', ...defaultInputBinds } },
@@ -202,37 +243,102 @@ const formDialog = reactive({
   hasErrors: false
 })
 
+const table = reactive({
+  data: undefined as undefined|Record<string, any>
+})
+
 const $axios = inject(axiosInjectKey)
 
+const emit = defineEmits(['status', 'updated']);
+
 // Computed
-const isDifferentEmitter = computed((): boolean => !!dialog.fields.same_issuer.value)
+const isDifferentEmitter = computed((): boolean => dialog.fields.same_issuer.value == undefined ? false :  !dialog.fields.same_issuer.value)
+
+const completed = computed(() => {
+  var value = (table.data?.rows.length || 0) > 0;
+  (table.data?.rows || []).forEach((row: FileInterface) => {
+    // if ( row.filename === null ) { value = false }
+  })  
+    return value
+  }
+); 
+
+const totAmount = computed(() => {
+  return (table.data?.total_cost || 0).toFixed(2)
+})
+
+const stampCount = computed(() => {
+  return table.data?.bollo?.quantity || 0
+})
+
+const stampValue = computed(() => {
+  return (table.data?.bollo?.total_stamp || 0).toFixed(0)
+})
+
+// Watchers
+const unwatchComplete = watch(
+  () => completed.value,
+  (completed) => emit('status', completed),
+  {
+    immediate: true
+  }
+)
+
+const unwatchReadonly = watch(()  => props.readonly, (readonly) =>{
+  if(readonly){ readonlyAction.value = true}
+  else { readonlyAction.value = false }
+})
 
 // Elements
 const formDialogEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 const refTable: Ref<null | GlobalComponents['VForm']> = ref(null)
 
+// Watchers
+const unwatchDate = watch(() => dialog.fields.date.value, (date: undefined | any) => {
+  var today = new Date();
+  var todayDate = today.toISOString().substring(0, 10);
+ 
+  if (!date || date <= todayDate) { return }
+    dialog.fields.date.value = todayDate
+})
+
 // Functions
-const add = () => {
-  dialog.fields.file.value = undefined
+const add = (invoice: FileInterface) => {
+  dialog.fields.date.value = undefined
+  dialog.fields.amount.value = undefined
+  dialog.fields.number.value = undefined
+  dialog.fields.type.value = undefined
+  // dialog.fields.same_issuer.value = undefined
+  dialog.id = undefined
   dialog.show = true
 }
 
-const download = (invoice: FileInterface) => {
+const show = (row: any) => {
+  dialog.fields.date.value = row.booking_file_invoice.date
+  dialog.fields.amount.value = row.booking_file_invoice.amount
+  dialog.fields.number.value = row.booking_file_invoice.number
+  dialog.fields.type.value = row.type
+  dialog.fields.same_issuer.value = row.booking_file_invoice.type ? 0 : 1
+  dialog.id = row.id
+  dialog.show = true
+}
+
+const download = async (invoice: FileInterface) => {
   toggleDownload()
 
   const { id, filename } = invoice
   const { baseURL } = $axios?.defaults || {}
   const url = `${baseURL}/bookings/${props.bookingId}/invoices/${id}`
 
-  new JsFileDownloader({
-    url,
-    filename,
-    withCredentials: true,
-    headers: [
-      { name: 'Authorization', value: userStore.bearerToken }
-    ],
-  })
-  .catch(console.error)
+  await new JsFileDownloader({
+      url,
+      filename,
+      withCredentials: true,
+      headers: [
+        { name: 'Authorization', value: userStore.bearerToken }
+      ],
+    })
+    .catch(console.error)
 
   toggleDownload()
 }
@@ -243,14 +349,16 @@ const remove = async (invoice: FileInterface) => {
   const { id } = invoice
   const path = `/bookings/${props.bookingId}/invoices/${id}`
 
-  $axios?.delete(path)
+  await $axios?.delete(path)
     .then(() => {
-      refTable.value?.loadData()
+      reloadTable()
+      emit('updated')
     })
     .catch(console.error)
 
   toggleDelete()
 }
+
 
 const handleSubmit = async () => {
   if (!formDialogEl.value || !$axios) { return }
@@ -263,14 +371,16 @@ const handleSubmit = async () => {
 
   toggleLoading()
 
-  const path = `/bookings/${props.bookingId}/invoices`
+  const { id } = dialog
+  const path = `/bookings/${props.bookingId}/invoices${id ? `/${id}` : ''}`
   const data = {}
 
   each(dialog.fields, (field, key) => {
     let { value, binds } = field
-    if (binds.type === 'file' && value.length) {
+    if (binds.type === 'file' && value?.length) {
       value = value[0]
-    }
+    } 
+
     Object.assign(data, {[key]: value})
   })
 
@@ -279,19 +389,41 @@ const handleSubmit = async () => {
     booleansAsIntegers: true,
     allowEmptyArrays: true
   })
-
-  $axios?.post(path, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
-    .then(() => {
-      refTable.value?.loadData()
-      dialog.show = false
-      dialog.fields.file.value = false
+ 
+    $axios?.post(path, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     })
-    .catch(console.error)
+      .then(() => {
+        reloadTable()
+        emit('updated')
+        dialog.show = false
+        dialog.fields.file.value = false
+        each(dialog.fields, (field, key) => {
+          if (field.value === undefined) { return }
+            dialog.fields[key].value = null
+        })
+      })
+      .catch(console.error)
+
+  
+    
 
   toggleLoading()
 }
+
+const reloadTable = () => {
+  console.log('reload invoice')
+  refTable.value?.loadData()
+}
+
+defineExpose({ reloadTable })
+
+onBeforeUnmount(() => {
+  unwatchComplete()
+  unwatchDate()
+  unwatchReadonly()
+
+})
 </script>

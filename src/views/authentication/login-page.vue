@@ -38,6 +38,7 @@
     >
       {{ $t('authentication.login.submit') }}
     </v-btn>
+    <a href="forgot-password">{{ $t('authentication.login.forgotPassword') }} </a>
   </v-form>
 </template>
 
@@ -76,7 +77,7 @@ const redirectUserAccount = () => {
 const handleRedirection = () => {
   const { type } = usersStore.userDetails
 
-  if (type === UserTypes.STRUTTURA) {
+  if (type === UserTypes.STRUTTURA || type === UserTypes.UTENTE) {
     return usersStore.structureNotApproved || usersStore.structureRejected ? redirectUserAccount() : redirectUserHome()
   }
 

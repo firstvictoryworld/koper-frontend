@@ -4,33 +4,58 @@
     :title="$t('bookings.edit.lendings.title')"
     :no-padding="true"
   >  
- 
-    <DataTable ref="refTable" :cols="cols" :url="`/bookings/${props.bookingId}/lendings`" local-prefix="bookings.edit.lendings." total-title="Totale Prenotazioni">
+    <DataTable
+      ref="refTable"
+      :cols="cols"
+      :url="`/bookings/${props.bookingId}/lendings`"
+      local-prefix="bookings.edit.lendings."
+      @loaded="(data) => table.data = data"
+    >
+      <template #subheader>
+        <div v-show="!completed" class="px-5">
+          <v-alert type="warning">
+            {{ $t('bookings.errors.missingLending') }}
+          </v-alert>
+        </div>
+      </template>
+
       <template #header>
-        <v-btn v-if="!readonly" size="large" color="koperniko-primary" :loading="isLoading" @click="() => add()">
+        <v-btn v-if="!readonly" size="large" color="koperniko-primary" :loading="isLoading" @click="() => add()"
+          :disabled="disable.insert">
           {{ $t('add') }}
         </v-btn>
+      </template>
+
+      <template #col-fund_code="{ row }">
+        {{ row.lending_agreement?.lending?.fund_code }}
       </template>
 
       <template #col-name="{ row }">
         {{ row.lending_agreement?.lending?.name }}
       </template>
 
+      <template #totals>
+        <div class="text-right">
+          <hr class="my-3" />
+
+          <div v-if="stampCount" class="mb-1">
+            <strong class="mr-3">Bollo non rimborsabile</strong>
+            <strong class="mr-3">n° {{ stampCount }} </strong> <b >Totale: € {{ stampValue }} </b>
+          </div>
+
+          <div class="mt-1 text-right">
+            <strong class="mr-3">Totale Prenotazioni</strong>
+            <strong>€ {{ totAmount }} </strong>
+          </div>
+        </div>
+      </template>
     </DataTable>
   </CardContainer>
 
-  <v-dialog
-    v-bind:model-value="dialog.show"
-    :scrim="true"
-    persistent
-    transition="dialog-bottom-transition"
-    max-width="1100"
-  >
+  <v-dialog v-bind:model-value="dialog.show" :scrim="true" persistent transition="dialog-bottom-transition"
+    max-width="1100">
     <v-card v-if="dialog.show" :loading="isLoading" color="grey-lighten-4">
-      <v-toolbar
-        dark
-        color="koperniko-primary"
-      >
+      <v-toolbar dark color="koperniko-primary">
         <v-toolbar-title>
           {{ $t('bookings.edit.lendings.edit') }}
         </v-toolbar-title>
@@ -38,7 +63,7 @@
         <v-spacer />
 
         <v-toolbar-items>
-          <v-btn icon dark @click="() => dialog.show = false" >
+          <v-btn icon dark @click="() => dialog.show = false">
             <v-icon color="white">mdi-close</v-icon>
           </v-btn>
         </v-toolbar-items>
@@ -48,54 +73,45 @@
         <CardContainer class="mb-5">
           <v-form ref="formDialogEl" lazy-validation v-model="formDialog.status" @submit.prevent="handleSubmit">
             <v-row>
-
               <v-col cols="12">
-                <LendingAgreementCategoryAutocompleteComponent v-model:value="dialog.lendingsCategories.selected" :return-object="true" :binds="{ readonly: !!props.readonly }" />
-              </v-col> 
-             
-              <v-col cols="12">
-                <LendingAgreementAutocompleteComponent v-model:value="dialog.lendings.selected" :return-object="true" :binds="{ readonly: !!props.readonly }" :lending-id="dialog.lendingsCategories.selected?.id" />
-              </v-col>
-              
-              <v-col cols="12" v-if="dialog.lendings.selected?.lending?.parent_id == 1">
-                <SpecializationLendingAutocompleteComponent v-model:value="dialog.specializations.selected" :return-object="true" :binds="{ readonly: !!props.readonly }" :lending-id="dialog.lendings?.selected?.lending?.id" :doctor-id="dialog.doctors.selected?.id"/>
+                <LendingAgreementAutocompleteComponent v-model:value="dialog.lendings.selected" :return-object="true"
+                  :binds="{ readonly: readonlyAction.value }" :lending-id="dialog.lendingsCategories.selected?.id"
+                  :booking-id="bookingId" :structure-id="structureId" />
               </v-col>
 
-              <v-col cols="12" v-if="dialog.lendings.selected?.lending?.parent_id == 1">
-                <DoctorLendingAutocompleteComponent v-model:value="dialog.doctors.selected" :return-object="true" :binds="{ readonly: !!props.readonly }" :lending-id="dialog.lendings?.selected?.lending?.id"  />
+              <v-col cols="12" v-if="dialog.lendings.selected?.lending?.parent_id == 1 && props.bookingType != BookingTypeEnum.ODONTOIATRICA">
+                <SpecializationLendingAutocompleteComponent v-model:value="dialog.specializations.selected"
+                  :return-object="true" :binds="{ readonly: readonlyAction.value }"
+                  :lending-id="dialog.lendings?.selected?.lending?.id" :doctor-id="dialog.doctors.selected?.id"
+                  :booking-id="props.bookingId" />
+              </v-col>
+
+              <v-col cols="12" v-if="dialog.lendings.selected?.lending?.parent_id == 1 && props.bookingType != BookingTypeEnum.ODONTOIATRICA">
+                <DoctorLendingAutocompleteComponent v-model:value="dialog.doctors.selected" :return-object="true"
+                  :binds="{ readonly: readonlyAction.value }" :specialization-id="dialog.specializations?.selected?.id"
+                  :structure-id="structureId" :booking-id="props.bookingId" />
               </v-col>
 
               <template v-for="(field, key) of dialog.fields" :key="key">
-                <v-col
-                  v-if="field.binds.type !== 'hidden' && (typeof field.show === 'function' ? field.show() : true)"
-                  cols="12"
-                  :md="field.size || '4'"
-                >
-                  <v-select
-                    v-if="field.binds.type === 'select'"
-                    v-model.number="field.value"
-                    :label="$t(`bookings.edit.lendings.${key}`)"
-                    v-bind="field.binds"
-                  />
+                <v-col v-if="field.binds.type !== 'hidden' && (typeof field.show === 'function' ? field.show() : true)"
+                  cols="12" :md="field.size || '4'">
+                  <v-select v-if="field.binds.type === 'select'" v-model.number="field.value"
+                    :label="$t(`bookings.edit.lendings.${key}`)" v-bind="field.binds" />
 
-                  <v-text-field
-                    v-else-if="field.binds.type === 'number'"
-                    v-model.number="field.value"
-                    :label="$t(`bookings.edit.lendings.${key}`)"
-                    v-bind="field.binds"
-                    class="hide-arrows"
-                  />
+                  <v-text-field v-else-if="field.binds.type === 'number'" v-model.number="field.value"
+                    :label="$t(`bookings.edit.lendings.${key}`)" v-bind="field.binds" class="hide-arrows" />
 
-                  <v-text-field
-                    v-else
-                    v-model="field.value"
-                    :label="$t(`bookings.edit.lendings.${key}`)"
-                    v-bind="field.binds"
-                  />
+                  <v-text-field v-else v-model="field.value" :label="$t(`bookings.edit.lendings.${key}`)"
+                    v-bind="field.binds" />
                 </v-col>
 
               </template>
             </v-row>
+
+            <v-col cols="12" v-if="dentistryCode.includes(dialog.lendings.selected?.lending?.fund_code || '')">
+             <v-alert v-if="teethObbligation.show" type="warning">{{teethObbligation.message}}</v-alert>
+              <BookingsLendingDentistryComponent v-model:value="dialog.teeth" class="mt-5" />
+            </v-col>
 
             <template v-if="!readonly">
               <v-divider class="my-5" />
@@ -111,37 +127,6 @@
       </v-card-text>
     </v-card>
   </v-dialog>
-
-  <v-dialog
-    v-bind:model-value="dialogObligation.show"
-    :scrim="true"
-    persistent
-    transition="dialog-bottom-transition"
-    max-width="1100"
-  >
-    <v-card v-if="dialogObligation.show" :loading="isLoading" color="grey-lighten-4">
-      <v-toolbar
-        dark
-        color="koperniko-primary"
-      >
-        <v-toolbar-title>
-          {{ $t('bookings.edit.lendings.obligations_title') }}
-        </v-toolbar-title>
-
-        <v-spacer />
-
-        <v-toolbar-items>
-          <v-btn icon dark @click="() => dialogObligation.show = false" >
-            <v-icon color="white">mdi-close</v-icon>
-          </v-btn>
-        </v-toolbar-items>
-      </v-toolbar>
-
-      <v-card-text>
-        <BookingsLendingObligationComponent v-if="dialogObligation.id" :booking-id="bookingId" :lending-id="dialogObligation.id" :readonly="readonly" />
-      </v-card-text>
-    </v-card>
-  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -150,21 +135,26 @@ import { axiosInjectKey } from '@/utils/axios'
 import { currencyValidation, requiredValidation } from '@/validation/rules'
 import { useToggle } from '@vueuse/shared'
 import { each, has } from 'lodash'
-import { inject, reactive, ref, onBeforeUnmount, watch, type GlobalComponents, type Ref } from 'vue'
+import { computed, inject, reactive, ref, onBeforeUnmount, watch, type GlobalComponents, type Ref, onMounted } from 'vue'
 import type { VInput } from 'vuetify/lib/components/VInput/index'
 import LendingAgreementAutocompleteComponent from '../autocomplete/LendingAgreementAutocompleteComponent.vue'
 import DoctorLendingAutocompleteComponent from '../autocomplete/DoctorLendingAutocompleteComponent.vue'
 import DataTable from '../common/DataTable.vue'
 import type { LendingInterface } from '../tariff/LendingComponent.vue'
+import BookingsLendingDentistryComponent from './BookingsLendingDentistryComponent.vue'
 import CardContainer from '../common/CardContainer.vue'
-import BookingsLendingObligationComponent from './BookingsLendingObligationComponent.vue'
 import SpecializationLendingAutocompleteComponent from '../autocomplete/SpecializationLendingAutocompleteComponent.vue'
-import LendingAgreementCategoryAutocompleteComponent from '../autocomplete/LendingAgreementCategoryAutocompleteComponent.vue'
+import BookingTypeEnum from '@/enums/BookingTypeEnum'
+import { useUsersStore } from '@/stores/users'
+
+//store
+const usersStore = useUsersStore()
 
 interface DoctorInterface {
   id?: number
   name: string
   surname: string
+  lending?: LendingInterface
 }
 
 interface AgreededLandingInterface {
@@ -195,26 +185,7 @@ interface BookedLandingRequestInterface extends BookedLandingInterface {
   lending_agreement?: AgreededLandingInterface
   doctor?: DoctorInterface
   specialization?: SpecializationInterface
-}
-
-interface FileInterface {
-  id: undefined | number
-  filename: string
-}
-
-interface BookingFileObligationInterface {
-  type_obligation: number
-}
-
-interface LendingDocumentInterface {
-  id: number
-  name: string
-  required: 0 | 1
-}
-
-interface BookingObligationInterface extends FileInterface {
-  booking_file_obligation: BookingFileObligationInterface
-  lending_document?: LendingDocumentInterface
+  teeth?: number[]
 }
 
 type BookedLandingFieldsKeys = keyof BookedLandingInterface
@@ -231,41 +202,54 @@ type BookedLandingFieldsInterface = {
 const props = defineProps<{
   bookingId: number
   readonly?: boolean
+  structureId: number
+  bookingType: number
 }>()
+
+const readonlyAction = reactive({
+  value: false
+})
+
 
 const $axios = inject(axiosInjectKey)
 
 const defaultInputBinds = {
   variant: 'outlined',
   hideDetails: 'auto',
-  readonly: props.readonly
+  readonly: readonlyAction.value
 } as Partial<VInput>
 
-const formDialog = reactive({ 
+const formDialog = reactive({
   status: true,
   hasErrors: false
 })
 
+const teethObbligation = reactive({
+  show: false,
+  message: ''
+})
+
 const cols = reactive([
-  { key: 'id' },
+  { key: 'fund_code' },
   { key: 'name' },
+  { key: 'iva' },
   { key: 'quantity' },
   { key: 'current_price' },
-  { label: '', key: '', actions:
-    [
-      { icon: 'mdi-pencil', handler(row: BookedLandingRequestInterface) { show(row) } },
-      { icon: 'mdi-delete', handler(row: BookedLandingRequestInterface) { remove(row) }, color: 'red' },
-      { icon: 'mdi-file-document-multiple', handler(row: BookedLandingRequestInterface) { upload(row) }},
-    ]
+  {
+    label: '', key: '', actions:
+      [
+        { icon: 'mdi-pencil', handler(row: BookedLandingRequestInterface) { show(row) }, btnProps: { class: 'mr-3', disabled: readonlyAction.value} },
+        { icon: 'mdi-delete', handler(row: BookedLandingRequestInterface) { remove(row) }, color: 'red', btnProps: { disabled: readonlyAction.value} }
+      ]
   },
 ] as DatatableColInterface[])
 
-const dialog = reactive({ 
+const dialog = reactive({
   show: false,
   id: null as null | number,
   fields: {
     current_price: { value: undefined, binds: { rules: [requiredValidation, currencyValidation], type: 'number', max: 1000000, ...defaultInputBinds } },
-    iva: { value: undefined, binds: { rules: [requiredValidation], type: 'select', items: [0,4,5,10,22], ...defaultInputBinds } },
+    iva: { value: undefined, binds: { rules: [requiredValidation], type: 'select', items: [0, 4, 5, 10, 22], ...defaultInputBinds } },
     quantity: { value: undefined, binds: { rules: [requiredValidation], type: 'number', ...defaultInputBinds } },
   } as BookedLandingFieldsInterface,
   lendings: {
@@ -280,13 +264,14 @@ const dialog = reactive({
   lendingsCategories: {
     selected: undefined as undefined | LendingCategoryInterface,
   },
+  teeth: [] as number[]
 })
 
-const dialogObligation = reactive({ 
-  show: false,
-  id: null as null | number,
-
+const table = reactive({
+  data: undefined as undefined|Record<string, any>
 })
+
+const emit = defineEmits(['status', 'updated']);
 
 // VueUse composables
 const [isLoading, toggleLoading] = useToggle(false)
@@ -294,19 +279,68 @@ const [isLoading, toggleLoading] = useToggle(false)
 // Elements
 const formDialogEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 const refTable: Ref<null | GlobalComponents['VForm']> = ref(null)
+const codeFreeCost = ['18', '19', '20', '6132', '6129', '2949', '99993', '99995', '99994', '99998', '2949', '6129', '2949', '99991', '99991']
+const dentistryCode = ['2583', '2584', '2585', '2586', '2587', '2588', '2589', '2591', '2593', '2594', '2595', '2596', '2600',
+  '2601', '2597', '2598', '2602', '2603', '2604', '2605', '2606', '2607', '2608', '2609', '2667', '2610', '2611', '2612', '2613', '2614',
+  '2673', '2674', '2675', '2679', '2520', '2722', '2723', '2615', '2617', '2618', '2619', '2620', '2621', '2646', '2622', '2624', '2625',
+  '2633', '2616', '2626', '2627', '2628', '2629', '2630', '2631', '2647']
 
-// Watchers
-const unwatchLending = watch(() => dialog.lendings.selected, (lending: undefined|AgreededLandingInterface) => {
-  if (!lending) { return }
-  dialog.fields.current_price.value = lending.agreeded_cost || 0
+const disable = reactive({
+  insert: false
 })
 
-const unwatchCurrentPrice = watch(() => dialog.fields.current_price.value, (value: undefined|number) => {
+// Computed
+const completed = computed(() => (table.data?.rows.length || 0) > 0)
+
+const totAmount = computed(() => {
+  return (table.data?.total_cost || 0).toFixed(2)
+})
+
+const stampCount = computed(() => {
+  return table.data?.bollo?.quantity || 0
+})
+
+const stampValue = computed(() => {
+  return (table.data?.bollo?.total_stamp || 0).toFixed(0)
+})
+
+// Watchers
+const unwatchComplete = watch(
+  () => completed.value,
+  (completed) => emit('status', completed),
+  {
+    immediate: true
+  }
+)
+
+const unwatchLending = watch(() => dialog.lendings.selected, (lending: undefined | AgreededLandingInterface) => {
+  if (!lending) { return }
+  if (codeFreeCost.includes(lending.lending?.fund_code || '')) { return }
+  if (dentistryCode.includes(lending.lending?.fund_code || '')) { checkTeethObbligation()}
+  dialog.fields.current_price.value = lending.agreeded_cost || 0
+  if (lending.lending?.fund_code == '4') {
+    disable.insert = true;
+  }
+})
+
+const unwatchCurrentPrice = watch(() => dialog.fields.current_price.value, (value: undefined | number) => {
+  if (codeFreeCost.includes(dialog.lendings.selected?.lending?.fund_code || '')) { return }
   const maxValue = dialog.lendings.selected?.agreeded_cost || 0
   if (!value || value <= maxValue) { return }
   dialog.fields.current_price.value = maxValue
+  if (dialog.id != null && dialog.doctors.selected) { return dialog.fields.current_price.value }
+  
 })
 
+const unwatchDoctor = watch(() => dialog.doctors.selected, (doctor: undefined | DoctorInterface) => {
+  if (!doctor) { return }
+  if (dialog.id == null && doctor) { return dialog.fields.current_price.value = doctor?.lendings[0].pivot.cost ? doctor?.lendings[0].pivot.cost : dialog.lendings.selected?.agreeded_cost }
+})
+
+const unwatchReadonly = watch(()  => props.readonly, (readonly) =>{
+  if(readonly){ readonlyAction.value = true}
+  else { readonlyAction.value = false }
+})
 
 // Functions
 const add = () => {
@@ -318,6 +352,7 @@ const add = () => {
     lending_agreement: undefined,
     doctor: undefined,
     specialization: undefined,
+    teeth: undefined,
   })
 }
 
@@ -331,17 +366,11 @@ const show = (bookingLending: BookedLandingRequestInterface) => {
   dialog.doctors.selected = bookingLending.doctor
   dialog.specializations.selected = bookingLending.specialization
 
+  dialog.teeth = bookingLending?.teeth?.split(',').map(Number) || []
   dialog.id = bookingLending.id
 
   dialog.show = true
 }
-
-const upload = (bookingLending: BookedLandingRequestInterface) => {
-
-  dialogObligation.id = bookingLending.id
-  dialogObligation.show = true
-}
-
 
 const handleSubmit = async () => {
   if (!formDialogEl.value || !$axios) { return }
@@ -355,13 +384,15 @@ const handleSubmit = async () => {
   toggleLoading()
 
   const { id } = dialog
-  const url = `/bookings/${props.bookingId}/lendings${ id ? `/${id}` : '' }`
+  const url = `/bookings/${props.bookingId}/lendings${id ? `/${id}` : ''}`
   const method = /\/[0-9]+$/.test(url) ? 'put' : 'post'
 
   const data = {
     lending_agreement_id: dialog.lendings.selected?.id,
     doctor_id: dialog.doctors.selected?.id,
-    specialization_id: dialog.specializations.selected?.id
+    specialization_id: dialog.specializations.selected?.id,
+    fund_code: dialog.lendings.selected?.lending?.fund_code,
+    teeth: dialog.teeth
   }
   each(dialog.fields, (field, key) => Object.assign(data, { [key]: field.value }))
 
@@ -371,7 +402,8 @@ const handleSubmit = async () => {
     method
   })
     .then(() => {
-      refTable.value?.loadData()
+      reloadTable()
+      emit('updated')
       dialog.show = false
     })
     .catch(console.error)
@@ -381,21 +413,69 @@ const handleSubmit = async () => {
 
 const remove = async (booking: BookedLandingRequestInterface) => {
   toggleLoading()
-
+  disable.insert = false;
   const { id } = booking
   const url = `/bookings/${props.bookingId}/lendings/${id}`
 
   await $axios?.delete(url)
     .then(() => {
-      refTable.value?.loadData()
+      reloadTable()
+      emit('updated')
     })
     .catch(console.error)
 
   toggleLoading()
 }
 
+const checkTeethObbligation = async () => {
+
+  
+await $axios?.post(`bookings/${props.bookingId}/checkTeeth/${ dialog.lendings.selected?.lending?.fund_code}`)
+  .then(({ data }) => {
+    const { success, message, response } = data
+    if(success) {teethObbligation.show=true }
+    
+    if (response.dettaglio=='S'){
+      teethObbligation.message = 'I seguenti denti sono obbligatori: Singoli denti'
+    }
+
+    if (response.dettaglio=='N'){
+      teethObbligation.message = 'I seguenti denti sono obbligatori: No dettaglio richiesto'
+    }
+
+    if (response.dettaglio=='E'){
+      teethObbligation.message = 'I seguenti denti sono obbligatori: Emiarcata'
+    }
+
+    if (response.dettaglio=='M'){
+      teethObbligation.message = 'I seguenti denti sono obbligatori: Multi denti (ad es. M4 attende 4 denti)'
+    }
+
+    if (response.dettaglio=='A'){
+      teethObbligation.message = 'I seguenti denti sono obbligatori: Arcata'
+    }
+  
+    emit('updated')      
+  })
+
+  .catch(console.error)
+
+}
+
+
+const reloadTable = () => {
+  refTable.value?.loadData()
+}
+
+defineExpose({ reloadTable })
+
 onBeforeUnmount(() => {
+  unwatchComplete()
   unwatchLending()
   unwatchCurrentPrice()
+  unwatchDoctor()
+  unwatchReadonly()
+  
 })
+
 </script>

@@ -22,7 +22,7 @@
 
           <v-radio-group v-else-if="field.radios" v-model="field.value" inline hide-details="auto"
             :rules="field.show === undefined || field.show() ? field.rules || [] : []"
-            :disabled="!!field.readonly">
+            >
             <template v-slot:label>
               {{ $t(`registration.${field.label}`) }}
             </template>
@@ -38,7 +38,7 @@
             <v-checkbox v-for="checkbox in field.checkboxes" v-model="field.value"
               :key="`${i}-${j}-checkbox-${checkbox.value}`" :value="checkbox.value" inline density="compact"
               hide-details="auto" :rules="field.show === undefined || field.show() ? field.rules || [] : []"
-              :disabled="!!readonly">
+              >
               <template v-slot:label>
                 {{ $t(checkbox.label) }}
               </template>
@@ -63,7 +63,7 @@
 
           <v-text-field
             v-else
-            :disabled="!!htmlStructure.cards[i].fields[j].readonly"
+            :disabled="!!field.readonly"
             hide-details="auto"
             color="koperniko-secondary"
             variant="outlined"
@@ -76,8 +76,8 @@
     </card-container>
 
     <v-alert v-if="!form.status && form.hasErrors" type="error" class="my-5">{{ $t('validation.errors.validationFail') }}</v-alert>
-
-    <v-btn v-if="!requestSent && !readonly" type="submit" class="d-block mx-auto mt-5" size="large" color="koperniko-primary"
+    <v-alert v-if="readonly && updated.show" type="success">{{ $t('registration.updated') }}</v-alert>
+    <v-btn v-if="!requestSent || readonly" type="submit" class="d-block mx-auto mt-5" size="large" color="koperniko-primary"
       :loading="isLoading">
       {{ $t('confirm') }}
     </v-btn>
@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 import { type Ref, ref, reactive, computed, type ComputedRef, type GlobalComponents, inject, watch, onMounted } from 'vue'
+import { useUsersStore } from '@/stores/users'
 import CardContainer from '@/components/common/CardContainer.vue'
 import OrganizationType from '@/enums/OrganizationType'
 import CompanyType from '@/enums/CompanyType'
@@ -97,6 +98,9 @@ import { serialize } from 'object-to-formdata'
 import { useToggle } from '@vueuse/shared'
 import { axiosInjectKey } from '@/utils/axios'
 import { emailValidation, requiredValidation, codFiscaleOrPivaValidation, pivaValidation, type ValidationRule } from '@/validation/rules'
+
+// Stores
+const usersStore = useUsersStore()
 
 interface RadioCheckboxInterface {
   label: string
@@ -144,29 +148,32 @@ const booleanRadio = [
 const $axios = inject(axiosInjectKey)
 
 const form = reactive({ status: true, hasErrors: false })
+
+const updated = reactive({ show: false })
+
 const htmlStructure: HtmlStructureInterface = reactive({
   cards: {
     structureDetails: {
       fields: [
-        { label: 'business_name', value: '', rules: [requiredValidation], readonly: true },
-        { label: 'fiscal_code', value: '', rules: [requiredValidation, codFiscaleOrPivaValidation], readonly: true },
-        { label: 'vat_number', value: '', rules: [requiredValidation, pivaValidation], readonly: true },
+        { label: 'business_name', value: '', rules: [requiredValidation], readonly: props.readonly },
+        { label: 'fiscal_code', value: '', rules: [requiredValidation, codFiscaleOrPivaValidation], readonly: props.readonly },
+        { label: 'vat_number', value: '', rules: [requiredValidation, pivaValidation], readonly: props.readonly },
         { label: 'address', value: '', rules: [requiredValidation], readonly: false},
-        { label: 'city', value: '', rules: [requiredValidation], readonly: true },
+        { label: 'city', value: '', rules: [requiredValidation], readonly: false },
         { label: 'province', value: '', rules: [requiredValidation], readonly: false },
-        { label: 'postal_code', value: '', rules: [requiredValidation], readonly: true },
+        { label: 'postal_code', value: '', rules: [requiredValidation], readonly: false },
         { label: 'region', value: '', rules: [requiredValidation], readonly: false },
-        { label: 'website', value: '', rules: [], readonly: true },
-        { label: 'phone_number', value: '', rules: [requiredValidation], readonly: true },
+        { label: 'website', value: '', rules: [], readonly: false },
+        { label: 'phone_number', value: '', rules: [requiredValidation], readonly: false },
       ]
     },
     structureContact: {
       show: () => !props.structureId,
       fields: [
-        { label: 'contact_name', value: '', rules: [requiredValidation], readonly: true  },
-        { label: 'contact_surname', value: '', rules: [requiredValidation], readonly: true  },
-        { label: 'contact_email', value: '', rules: [requiredValidation, emailValidation], readonly: true  },
-        { label: 'contact_phone_number', value: '', rules: [requiredValidation],readonly: true  },
+        { label: 'contact_name', value: '', rules: [requiredValidation], readonly: false  },
+        { label: 'contact_surname', value: '', rules: [requiredValidation], readonly: false  },
+        { label: 'contact_email', value: '', rules: [requiredValidation, emailValidation], readonly: false  },
+        { label: 'contact_phone_number', value: '', rules: [requiredValidation],readonly: false  },
       ]
     },
     organizationalType: {
@@ -179,9 +186,9 @@ const htmlStructure: HtmlStructureInterface = reactive({
               // @ts-ignore FIXME
               value: OrganizationType[key],
             })), 
-            readonly: true 
+            readonly: false 
         },
-        { label: 'withholding_tax', value: true, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => hasRitenutaAcconto.value, readonly: true  },
+        { label: 'withholding_tax', value: true, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => hasRitenutaAcconto.value, readonly: false  },
       ]
     },
     companyType: {
@@ -195,17 +202,17 @@ const htmlStructure: HtmlStructureInterface = reactive({
               // @ts-ignore FIXME
               value: CompanyType[key],
             })),
-            readonly: true 
+            readonly: false 
         }
       ]
     },
     healthAuthorization: {
       fields: [
-        { label: 'health_authorization_released_by', value: '', rules: [requiredValidation], readonly: true  },
+        { label: 'health_authorization_released_by', value: '', rules: [requiredValidation], readonly: false  },
         { label: 'health_authorization_number', value: '', rules: [requiredValidation], readonly: false  },
-        { label: 'health_authorization_date', value: '', type: 'date', rules: [requiredValidation], readonly: true  },
+        { label: 'health_authorization_date', value: '', type: 'date', rules: [requiredValidation], readonly: false  },
         { label: 'health_authorization_document', value: [], type: 'file', fullWidth: true, rules: [requiredValidation], readonly: true  },
-        { label: 'health_authorization_health_director', value: '', rules: [requiredValidation], fullWidth: true, readonly: true  },
+        { label: 'health_authorization_health_director', value: '', rules: [requiredValidation], fullWidth: true, readonly: false  },
       ]
     },
     structureType: {
@@ -218,7 +225,7 @@ const htmlStructure: HtmlStructureInterface = reactive({
               // @ts-ignore FIXME
               value: StructureTypeEnum[key],
             })),
-            readonly: true 
+            readonly: false 
         }
       ]
     },
@@ -227,9 +234,15 @@ const htmlStructure: HtmlStructureInterface = reactive({
         { label: 'disbursement_schemes_national_health_service', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), readonly: false  },
         { label: 'disbursement_schemes_document', value: [], type: 'file', rules: [requiredValidation], fullWidth: true, show: () => hasDisbursementSchemes.value, readonly: true   },
         { type: 'br' },
-        { label: 'disbursement_schemes_direct_form', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => hasDisbursementSchemes.value, readonly: true   },
-        { label: 'disbursement_schemes_private_activities', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), readonly: true   },
-        { label: 'disbursement_schemes_private_intramoenia_activities', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), readonly: true   },
+        { label: 'disbursement_schemes_direct_form', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => hasDisbursementSchemes.value, readonly: false   },
+        { label: 'disbursement_schemes_private_activities', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), readonly: false   },
+        { label: 'disbursement_schemes_private_intramoenia_activities', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), readonly: false   },
+      ]
+    },
+    mogUpdate: {
+      show: () => props.structureId,
+      fields: [
+        { label: 'mog.label', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => props.structureId  },
       ]
     },
   }
@@ -254,7 +267,7 @@ const fields: ComputedRef<Record<string, any>> = computed(() => {
       if (f.label === undefined || f.value === undefined) { return }
       let value = f.value
       if (f.type === 'file') {
-        value = f.value.length ? f.value[0] : null
+        value = f.value && f.value.length ? f.value[0] : null
       }
       Object.assign(_fields, { [f.label]: value })
     })
@@ -286,12 +299,13 @@ const formEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 
 // Fucntions
 const handleSubmit = async () => {
+  if(props.structureId){ updated.show = false}
 
-  if (!formEl.value) { return }
+  // if (!formEl.value) { return }
 
-  await formEl.value.validate()
+  // await formEl.value.validate()
 
-  if (!form.status) { return form.hasErrors = true }
+  // if (!form.status) { return form.hasErrors = true }
 
   form.hasErrors = false
 
@@ -302,19 +316,37 @@ const handleSubmit = async () => {
     booleansAsIntegers: true,
     allowEmptyArrays: true
   })
+  if(props.structureId){
+    await $axios?.['put'](`/registration-request${ props.structureId ? `/${props.structureId}` : '' }`, fields.value, {
+    
+  })
+    .then(() => {
+      formEl.value?.reset()
+      toggleRequestSent()
+      loadData()
+      if(props.structureId){ updated.show = true}
+    })
+    .catch(console.error)
 
-  await $axios?.post('/registration-request', formData, {
+  toggleLoading()
+  } else {
+
+    await $axios?.['post'](`/registration-request`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
   })
     .then(() => {
-      // formEl.value?.reset()
+      loadData()
+      formEl.value?.reset()
       toggleRequestSent()
     })
     .catch(console.error)
 
   toggleLoading()
+
+  }
+  
 }
 
 const loadData = async () => {
@@ -344,16 +376,19 @@ const loadData = async () => {
       htmlStructure.cards.healthAuthorization.fields[0].value = data.health_authorization_released_by
       htmlStructure.cards.healthAuthorization.fields[1].value = data.health_authorization_number
       htmlStructure.cards.healthAuthorization.fields[2].value = data.health_authorization_date
-      htmlStructure.cards.healthAuthorization.fields[3].value = data.health_authorization_document
+      // htmlStructure.cards.healthAuthorization.fields[3].value = data.health_authorization_document
       htmlStructure.cards.healthAuthorization.fields[4].value = data.health_authorization_health_director
 
       htmlStructure.cards.structureType.fields[0].value = map(data.structure_types || [], (type: Record<string, any>) => type.type)
 
       htmlStructure.cards.disbursementSchemes.fields[0].value = data.disbursement_schemes_national_health_service === 1
-      htmlStructure.cards.disbursementSchemes.fields[1].value = data.disbursement_schemes_document
+      // htmlStructure.cards.disbursementSchemes.fields[1].value = data.disbursement_schemes_document
       htmlStructure.cards.disbursementSchemes.fields[3].value = data.disbursement_schemes_direct_form === 1
       htmlStructure.cards.disbursementSchemes.fields[4].value = data.disbursement_schemes_private_activities === 1
       htmlStructure.cards.disbursementSchemes.fields[5].value = data.disbursement_schemes_private_intramoenia_activities === 1
+
+      htmlStructure.cards.mogUpdate.fields[0].value = data.mog === 1
+
     })
     .catch(console.error)
 

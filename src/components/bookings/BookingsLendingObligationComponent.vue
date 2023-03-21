@@ -199,22 +199,22 @@ const formDialogEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 const refTable: Ref<null | GlobalComponents['VForm']> = ref(null)
 
 // Functions
-const download = (obligation: BookingObligationInterface) => {
+const download = async (obligation: BookingObligationInterface) => {
   toggleDownload()
 
   const { id, filename } = obligation
   const { baseURL } = $axios?.defaults || {}
   const url = `${baseURL}${basePath.value}/obligations/${id}`
 
-  new JsFileDownloader({
-    url,
-    filename,
-    withCredentials: true,
-    headers: [
-      { name: 'Authorization', value: userStore.bearerToken }
-    ],
-  })
-  .catch(console.error)
+  await new JsFileDownloader({
+      url,
+      filename,
+      withCredentials: true,
+      headers: [
+        { name: 'Authorization', value: userStore.bearerToken }
+      ],
+    })
+    .catch(console.error)
 
   toggleDownload()
 }
@@ -225,7 +225,7 @@ const remove = async (obligation: BookingObligationInterface) => {
   const { id } = obligation
   const path = `${basePath.value}/obligations/${id}`
 
-  $axios?.delete(path)
+  await $axios?.delete(path)
     .then(() => {
       refTable.value?.loadData()
     })

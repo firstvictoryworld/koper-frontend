@@ -15,11 +15,11 @@ export const authentication = {
       path: 'password-reset',
       component: () => import('@/views/authentication/password-creation.vue'),
     },
-    // {
-    //   name: 'forgot-password',
-    //   path: 'forgot-passwordn',
-    //   component: () => import('@/views/authentication/forgot-password.vue'),
-    // },
+    {
+      name: 'forgot-password',
+      path: 'forgot-password',
+      component: () => import('@/views/authentication/forgot-password.vue'),
+    },
   ],
 }
  

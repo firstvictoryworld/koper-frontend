@@ -122,7 +122,7 @@ const showError = (message: string, title: string = 'Attenzione') => {
 }
 
 const reloadCurrentUser = debounce(async () => {
-  if (!usersStore.isLogged || !usersStore.isStruttura) { return }
+  if (!usersStore.isLogged || usersStore.isFondo) { return }
 
   await $axios?.get(`/users/current`, {
     // @ts-ignore FIXME

@@ -13,6 +13,7 @@
             :label="$t(`registration.contacts.${key}`)"
             :rules="key === 'email' ? [requiredValidation, emailValidation] : [requiredValidation]"
             @update:modelValue="(value: string) => $emit('update:data', { ...data, [key]: value })"
+            :disabled="!!readonly"
           />
         </v-col>
       </template>
@@ -35,7 +36,8 @@ interface Record {
 }
 
 interface Props {
-  data: Record
+  data: Record,
+  readonly: boolean
 }
 
 const props = defineProps<Props>()

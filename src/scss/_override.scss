@@ -67,3 +67,7 @@ input.hide-arrows {
 .v-autocomplete__selection {
   overflow: hidden;
 }
+
+.v-card > .v-card__loader > div {
+  transition: none;
+}

@@ -5,6 +5,7 @@ export default {
   },
   lending: {
     code: 'Cod.',
+    fund_code: 'Cod. Faschim', 
     name: '',
     type: 'Tipologia',
     dentistry: 'Odontoiatrica',

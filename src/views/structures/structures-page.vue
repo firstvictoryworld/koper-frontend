@@ -45,7 +45,45 @@
 
     <v-alert v-else-if="structure.status === StructureStatusEnum.REJECTED" type="error">{{ $t('structures.edit.rejectedMessage') }}</v-alert>
 
-    <RegistrationForm v-if="structure.id" :structure-id="structure.id" :readonly="true" class="my-5" />
+    <v-card class="mt-5" :rounded="50">
+      <v-tabs
+        v-model="tabs.value"
+        bg-color="koperniko-primary"
+        center-active
+        show-arrows
+      >
+        <v-tab value="structure">{{ $t('registry.tabs.structure') }}</v-tab>
+        <v-tab value="users">{{ $t('registry.tabs.users') }}</v-tab>
+
+        <v-tab value="bank">{{ $t('registry.tabs.bankAccount') }}</v-tab>
+        <v-tab value="contacts">{{ $t('registry.tabs.contacts') }}</v-tab>
+      </v-tabs>
+
+      <v-card-text>
+        <v-window v-model="tabs.value" class="pt-1">
+
+          <v-window-item value="structure">
+            <StructureDetails :structure-id="structure.id || undefined" :show="true" :readonly="readonly"/>
+          </v-window-item>
+
+          <v-window-item value="users">
+            <StructureUsers :structure-id="structure.id || undefined" :show="true" />
+          </v-window-item>
+
+          <v-window-item value="bank">
+            <BankAccount :structure-id="structure.id || undefined" :show="true" :readonly="readonly"/>
+          </v-window-item>
+
+          <v-window-item value="contacts">
+            <StructureContacts :structure-id="structure.id || undefined" :show="true" :readonly="readonly"/>
+          </v-window-item>
+
+          <v-window-item value="password">
+            <PasswordModify />
+          </v-window-item>
+        </v-window>
+      </v-card-text>
+    </v-card>
   </FullDialog>
 
   <ConfirmDialog
@@ -64,23 +102,36 @@
 <script setup lang="ts">
 // FIXME clean and move to separated components
 import type { DatatableColInterface, DatatableRowInterface, DatatableComponent } from '@/@types'
+import StructureDetails from '@/components/account/StructureDetails.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import FullDialog from '@/components/common/FullDialog.vue'
 import PageDescription from '@/components/common/PageDescription.vue'
 import ConfirmDialog from '@/components/dialog/ConfirmDialog.vue'
 import RegistrationForm from '@/components/registration/RegistrationForm.vue'
+import BankAccount from '@/components/structure-registry/BankAccount.vue'
+import StructureContacts from '@/components/structure-registry/StructureContacts.vue'
+import StructureUsers from '@/components/structure-registry/StructureUsers.vue'
 import StructureStatusEnum from '@/enums/StructureStatusEnum'
+import { useUsersStore } from '@/stores/users';
 import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
-import { inject, reactive, ref, type Ref } from 'vue'
+import { inject, reactive, ref, computed, type Ref } from 'vue'
 
 const $axios = inject(axiosInjectKey)
 
+// Stores
+const usersStore = useUsersStore()
+
+// Computed
+const readonly = computed(() => {
+  return !usersStore.isFondo
+})
+
 const cols = reactive([
-  { key: 'id' },
+  { key: 'code' },
   { key: 'business_name' },
   { key: 'fiscal_code' },
-  { key: 'vat_number' },
+  { key: 'city' },
   { key: 'status' },
   { label: '', key: '', actions:
     [
@@ -96,6 +147,8 @@ const structure = reactive({
   id: null,
   status: null
 })
+
+const tabs = reactive({ value: 'user' })
 
 // Elements
 const refTable: Ref<null | DatatableComponent> = ref(null)

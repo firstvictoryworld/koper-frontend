@@ -1,5 +1,5 @@
 <template>
-  <RegistrationForm :structure-id="usersStore.userDetails.structureId || undefined" :readonly="true" />
+  <RegistrationForm :structure-id="usersStore.userDetails.structureId || undefined" :readonly="readonly" />
 </template>
 
 <script setup lang="ts">
@@ -8,4 +8,9 @@ import RegistrationForm from '../registration/RegistrationForm.vue'
 
 // Stores
 const usersStore = useUsersStore()
+
+// Props
+const props = defineProps<{
+  readonly?: boolean
+}>()
 </script>

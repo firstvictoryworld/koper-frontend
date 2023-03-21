@@ -24,6 +24,9 @@
     <v-alert v-if="agreementData.status === AgreementStatusEnum.REJECTED" type="error">
       {{ $t('agreements.status.rejected') }}
     </v-alert>
+    <v-alert v-if="agreementData.status === AgreementStatusEnum.CLOSED" type="error">
+      {{ $t('agreements.status.closed') }}
+    </v-alert>
   </template>
 
   <template v-for="(lending, i) in lendings.list" :key="`lending-cat-${i}`">
@@ -209,6 +212,7 @@ const injectAgreementValues = (children: LendingInterface[]) => {
     if (child.lending_agreements?.length) {
       child.selected = 1
       child.structure_cost = find(child.lending_agreements[0].current_lending_proposals, { user_type: UserTypes.STRUTTURA })?.lending_cost as number | undefined
+      console.log(child);
       child.lending_cost = 
         find(child.lending_agreements[0].current_lending_proposals, { user_type: UserTypes.FONDO })?.lending_cost as number | undefined
         || child.lending_cost

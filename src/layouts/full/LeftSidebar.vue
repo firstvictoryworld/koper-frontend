@@ -34,8 +34,9 @@
           <!-- ---------------------------------------------- -->
           <!--- Item Sub Header -->
           <!-- ---------------------------------------------- -->
-          <v-list-subheader v-if="item.header && item.allowedTypes?.includes(usersStore?.userDetails?.type || 0)" :key="i">
+          <v-list-subheader v-if="item.header && (item.allowedTypes?.includes(usersStore?.userDetails?.type || 0) || usersStore?.userDetails?.accesses?.includes(item.allowedAccesses))" :key="i">
             {{ item.header }}
+           
           </v-list-subheader>
 
           <!-- ---------------------------------------------- -->
@@ -43,7 +44,7 @@
           <!-- ---------------------------------------------- -->
           <template v-else>
             <v-list-item
-              v-if="item.allowedTypes?.includes(usersStore?.userDetails?.type || 0)"
+              v-if="item.allowedTypes?.includes(usersStore?.userDetails?.type || 0) || usersStore?.userDetails?.accesses?.includes(item.allowedAccesses)"
               :active="route.fullPath === item.to"
               :key="i"
               :disabled="!item.alwaysActive && (item.disabled === true || !usersStore?.structureCompleted || false)"
@@ -51,6 +52,8 @@
               rounded="lg"
               class="mb-1"
             >
+           
+           
               <template #prepend>
                 <v-icon :icon="item.icon"></v-icon>
               </template>

@@ -5,4 +5,5 @@ export type FieldInterface = {
   size?: number
   binds: Record<string, any>
   options?: Array<{ label: string; value: any }>
+  readonly?: boolean
 }

@@ -48,7 +48,7 @@ const unwatchSearch = watch(() => input.search, (value) => {
 })
 
 const unwatchModel = watch(() => input.model, (structureData: Record<string, any>) => {
-  emit('update:value', structureData.id)
+  emit('update:value', structureData?.id)
 })
 
 const unwatchSelected = watch(() => props.value, (selectedValue) => {

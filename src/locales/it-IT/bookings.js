@@ -11,14 +11,23 @@ export default {
     },
     status: {
       1: 'Bozza',
-      2: 'Da verificare',
-      3: 'Annullata',
-      4: 'Respinto',
-      5: 'Approvata',
-      6: 'Presentata al fondo',
+      2: 'Approvata',
+      3: 'Bloccata',
+      4: 'Respinta',
+      5: 'Integrata',
+      6: 'Conclusa',
+      7: 'Sospesa',
+      8: 'Presentata al fondo',
+      9: 'In Revisione'
+    },
+    errors: {
+      missingDoc: 'Attenzione, documentazione mancante!',
+      missingDocs: 'Attenzione, uno o più documenti richiesti non sono stati caricati!',
+      missingLending: 'Attenzione, nessuna prestazione inserita.'
     },
     list: {
       id: '#',
+      checkbox: '',
       number: 'Numero',
       type: 'Tipo',
       stato: 'Stato',
@@ -26,7 +35,8 @@ export default {
       nominative: 'Nominativo',
       status: 'Status',
       fiscal_code: 'Codice fiscale',
-      structure: 'Struttura'
+      structure: 'Struttura',
+      created_at: 'Data Apertura'
     },
     edit: {
       title: 'Prenotazione',
@@ -41,11 +51,12 @@ export default {
           spouse_cohabitant: 'Coniuge convivente',
         },
         assistableFrom: 'Assistibile dal',
-        assistableTo: 'al',
+        assistableTo: 'al'
       },
       show: {
         title: 'Dati prenotazione - Socio assistibile',
       },
+      messageBookingType: 'Per proseguire con la Prenotazione si prega di selezionare il Regime di Erogazione e Confermare',
       invoices: {
         title: 'Fatture',
         edit: 'Carica nuovo allegato',
@@ -54,7 +65,8 @@ export default {
         filename: 'Nome file',
         number: 'Numero fattura',
         date: 'Data fattura',
-        amount: 'Importo',
+        amount: 'Importo €',
+        stamp: 'Bollo €',
         type: 'Tipo',
         same_issuer: 'Emittente diverso dalla struttura?',
         vat_number: 'Partita IVA',
@@ -66,10 +78,25 @@ export default {
           3: 'Storno',
         }
       },
+      obligations: {
+        title: 'Documentazione',
+        editTitle: 'Carica documento',
+        name: 'Nome',
+        lendings: 'Prestazioni di riferimento',
+        required: 'Obbligatorio',
+        type_obligation: 'Tipo documento',
+        file: 'File',
+        types: {
+          0: 'Altro',
+          1: 'Radiografia',
+          2: 'ECG',
+        }
+      },
       lendings: {
         title: 'Prestazioni',
         edit: 'Modifica prestazione',
-        id: '#',
+        // id: '#',
+        fund_code: 'Codice',
         name: 'Prestazione',
         current_price: 'Costo €',
         quantity: 'Quantità',
@@ -98,17 +125,23 @@ export default {
       },
       summary_cost: {
         title: 'Riepilogo',
-        id: 'Codice',
+        fund_code: 'Codice',
         name: 'Descrizione',
-        current_price: 'Tariffa negoziata in vigore',
-        quantity: 'Quantità',
-        iva: 'Aliquota IVA',
-        fund_cost: 'Tariffa di rimborso del Fondo',
-        patient_cost: 'Totale a carico iscritto',
-        structure_cost: 'Imponibile',
+        unit_amount: 'Tariffa negoziata in vigore €',
+        quantity: 'Qtà',
+        net_amount: 'Imponibile €',
+        tax_percentage: 'IVA %',
+        total_amount: 'Importo totale prestazione €',
+        patient_amount: 'Importo a carico Iscritto €',
+        refund_amount: 'Rimborso dal Fondo €',
       },
-      type: 'Regime di erogazione della prestazione',
-      main_fiscal_code: 'Codice Fiscale iscritto principale',
+      summary_totals: {
+        total: 'Importo totale prestazione',
+        refund: 'Rimborso totale dal Fondo',
+        patient: 'Importo totale a carico dell\'Iscritto',
+      },
+      type: 'Regime di erogazione',
+      main_fiscal_code: 'Codice Fiscale di chi deve eseguire la prestazione',
       position: 'Numero fondo',
       name: 'Nome',
       surname: 'Cognome',
@@ -126,6 +159,10 @@ export default {
       errorTitle: 'Attenzione',
       validatedTitle: 'Prenotazione approvata',
       validatedMessage: 'I dati inseriti sono pronti per essere trasmessi per le operazioni di liquidazione. Nel seguito e` possibile visualizzare il riepilogo dei costi. Si desidera erogare la richiesta?',
+    },
+    deliver: {
+      error: 'La prenotazione non è valida.',
+      errorTitle: 'Attenzione',
     }
   }
 }

@@ -4,10 +4,12 @@ export default {
       title: 'Lista strutture',
       subtitle: 'Visualizza l\'elenco delle strutture convenzionate o da convenzionare.',
       id: '#',
+      code: 'Codice',
       status: 'Stato',
       business_name: 'Ragione sociale',
       fiscal_code: 'Cod. Fiscale',
       vat_number: 'P. IVA',
+      city: 'Città'
     },
     edit: {
       title: 'Dati struttura',

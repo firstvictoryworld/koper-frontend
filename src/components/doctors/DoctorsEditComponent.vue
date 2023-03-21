@@ -35,6 +35,7 @@
 
           </template>
         </v-row>
+        <v-alert v-if="message.show" type="success">{{ message.message }}</v-alert>
 
         <v-btn type="submit" class="d-block ml-auto mt-5" size="large" color="koperniko-primary" :loading="isLoading">
           {{ $t('confirm') }}
@@ -44,14 +45,9 @@
   </v-card>
 
   <template v-if="isEditing">
-      <v-row class="align-center pt-1 w-100 mr-6">
-        <v-col cols="12" :md="true">
-          <SpecializationAutocompleteComponent v-model:value="fields.value" :not-doctor="doctorId" />
-        </v-col>
-      </v-row>
-    
 
-    <DoctorLedingsComponent :doctor-id="fields.id.value" />
+    <DoctorLedingsComponent v-if="fields.visits.value" :doctor-id="fields.id.value" :structure-id="fields.structure_data_id.value" ref-show-table="refShowTable"/>
+  
   </template>
   
 </template>
@@ -62,12 +58,13 @@ import { axiosInjectKey } from '@/utils/axios';
 import { codFiscaleValidation, requiredValidation } from '@/validation/rules';
 import { useToggle } from '@vueuse/shared';
 import { each, mapValues } from 'lodash';
-import { computed, inject, onMounted, reactive, ref, type GlobalComponents, type Ref } from 'vue';
+import { computed, inject, onMounted, onBeforeUnmount, reactive, ref, watch, type GlobalComponents, type Ref } from 'vue';
 import StructureAutocompleteComponent from '../autocomplete/StructureAutocompleteComponent.vue'
 import DoctorLedingsComponent from './DoctorLedingsComponent.vue'
 
 const props = defineProps<{
   doctorId: null|number
+  structureId:  undefined|null|number
 }>()
 
 const $axios = inject(axiosInjectKey)
@@ -78,16 +75,16 @@ const fields = reactive({
   id: { value: props.doctorId, rules: [], type: 'hidden' },
   name: { value: '', rules: [requiredValidation], type: 'text' },
   surname: { value: '', rules: [requiredValidation], type: 'text' },
-  structure_data_id: { value: usersStore.isStruttura ? usersStore.userDetails.structureId : '', rules: [requiredValidation], type: usersStore.isStruttura ? 'hidden' : 'autoStructure' },
+  structure_data_id: { value: props.structureId, rules: [requiredValidation], type: usersStore.isStruttura || usersStore.isUtente? 'hidden' : 'autoStructure' },
   fiscal_code: { value: '', rules: [requiredValidation, codFiscaleValidation], type: 'text' },
   separator1: { value: null, rules: [], type: 'separator' },
   active: { value: 1, rules: [], type: 'checkbox' },
-  separator2: { value: null, rules: [], type: 'separator' },
-  recovery: { value: 0, rules: [], type: 'checkbox' },
-  interventions: { value: 0, rules: [], type: 'checkbox' },
+  // separator2: { value: null, rules: [], type: 'separator' },
+  // recovery: { value: 0, rules: [], type: 'checkbox' },
+  // interventions: { value: 0, rules: [], type: 'checkbox' },
   visits: { value: 0, rules: [], type: 'checkbox' },
-  private_rate: { value: 0, rules: [], type: 'checkbox' },
-  online: { value: 0, rules: [], type: 'checkbox' },
+  // private_rate: { value: 0, rules: [], type: 'checkbox' },
+  // online: { value: 0, rules: [], type: 'checkbox' },
   separator3: { value: null, rules: [], type: 'separator' },
 })
 
@@ -102,6 +99,11 @@ const [isLoading, toggleLoading] = useToggle(false)
 
 // Elements
 const formEl: Ref<null | GlobalComponents['VForm']> = ref(null)
+const message = reactive({
+  show: false,
+  message: '',
+  type : ''
+})
 
 // Functions
 
@@ -123,7 +125,9 @@ const handleSubmit = async () => {
     .then(({ data }) => {
       fields.id.value = data.id
       formEl.value?.resetValidation()
-      emit('updated')
+  
+      message.message = `Il medico è stato ${ isEditing.value ? 'aggiornato' : 'creato'}`
+     
     })
     .catch(console.error)
 
@@ -153,4 +157,5 @@ const loadData = async () => {
 onMounted(() => {
   loadData()
 })
+
 </script>

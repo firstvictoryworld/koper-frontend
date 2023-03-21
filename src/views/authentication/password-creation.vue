@@ -80,7 +80,7 @@ const redirectUserAccount = () => {
 const handleRedirection = () => {
   const { type } = usersStore.userDetails
 
-  if (type === UserTypes.STRUTTURA) {
+  if (type === UserTypes.STRUTTURA || type === UserTypes.UTENTE) {
     return usersStore.structureNotApproved || usersStore.structureRejected ? redirectUserAccount() : redirectUserHome()
   }
 
@@ -94,7 +94,7 @@ const handleRedirection = () => {
 const handleLogin = async () => {
   toggleLoaderShown()
 
-  await $axios?.post('/login', { email: route.query.email, password: fields.password })
+  await $axios?.post('/login', { email: route.query.username, password: fields.password })
     .then(({ data }) => {
       usersStore.assignUserDetails(data)
       handleRedirection()
@@ -113,9 +113,9 @@ const handleSubmit = async () => {
 
   toggleLoaderShown()
 
-  const { token, email }  = route.query
+  const { token, email, username }  = route.query
 
-  await $axios?.put('/reset/password', { ...fields, email, token })
+  await $axios?.put('/reset/password', { ...fields, email, token, username })
     .then(() => {
       handleLogin()
     })

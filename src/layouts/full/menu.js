@@ -1,5 +1,6 @@
 import UserTypes from "@/enums/UserTypesEnum";
-
+import UserAccesses from "@/enums/UserAccessesEnum";
+console.log(import.meta.env.VITE_APP_ENV)
 export const mainMenu = [
   {
     title: 'mainMenu.home',
@@ -7,7 +8,8 @@ export const mainMenu = [
     allowedTypes: [
       UserTypes.FONDO,
       UserTypes.BACKOFFICE,
-      UserTypes.STRUTTURA
+      UserTypes.STRUTTURA,
+      UserTypes.UTENTE
     ],
     icon: 'mdi-home',
     disabled: false,
@@ -18,8 +20,9 @@ export const mainMenu = [
     header: 'Gestione anagrafica struttura',
     allowedTypes: [
       UserTypes.BACKOFFICE,
-      UserTypes.STRUTTURA
-    ]
+      UserTypes.STRUTTURA,
+    ],
+    allowedAccesses: UserAccesses.REGISTRY,
   },
   {
     title: 'mainMenu.anagraficaStruttura',
@@ -28,6 +31,7 @@ export const mainMenu = [
       UserTypes.STRUTTURA,
       UserTypes.BACKOFFICE
     ],
+    allowedAccesses: UserAccesses.REGISTRY,
     icon: 'mdi-handshake',
     disabled: false
   },
@@ -38,7 +42,8 @@ export const mainMenu = [
       UserTypes.FONDO,
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
-    ]
+    ],
+    allowedAccesses: UserAccesses.TARIFF,
   },
   {
     title: 'mainMenu.structures',
@@ -58,8 +63,11 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.TARIFF,
     icon: 'mdi-cash-multiple',
-    disabled: false
+    disabled: import.meta.env.VITE_APP_ENV === 'staging'? false : true,
+
+   
   },
   {
     title: 'mainMenu.medici',
@@ -69,6 +77,7 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.DOCTORS,
     icon: 'mdi-doctor',
     disabled: false
   },
@@ -90,6 +99,7 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.NEGOTIATION,
     icon: 'mdi-handshake',
     disabled: false
   },
@@ -101,6 +111,7 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.DEEDS,
     icon: 'mdi-file-document-multiple',
     disabled: false
   },
@@ -112,6 +123,7 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.CERTIFICATION,
     icon: 'mdi-file-document-check',
     disabled: false
   },
@@ -122,7 +134,7 @@ export const mainMenu = [
       UserTypes.FONDO,
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
-    ]
+    ],
   },
   {
     title: 'mainMenu.prenotazioni',
@@ -132,6 +144,7 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.BOOKINGS,
     icon: 'mdi-folder',
     disabled: false
   },
@@ -143,27 +156,28 @@ export const mainMenu = [
       UserTypes.BACKOFFICE,
       UserTypes.STRUTTURA
     ],
+    allowedAccesses: UserAccesses.RECONCILIATION,
     icon: 'mdi-bank',
     disabled: false
   },
   ///////////////////////////////////////////////////////////////////////////////////////
-  {
-    header: 'Amministrazione',
-    allowedTypes: [
-      UserTypes.FONDO,
-      UserTypes.BACKOFFICE
-    ]
-  },
-  {
-    title: 'mainMenu.utenti',
-    to: '/todo',
-    allowedTypes: [
-      UserTypes.FONDO,
-      UserTypes.BACKOFFICE
-    ],
-    icon: 'mdi-account-multiple',
-    disabled: true
-  },
+  // {
+  //   header: 'Amministrazione',
+  //   allowedTypes: [
+  //     UserTypes.FONDO,
+  //     UserTypes.BACKOFFICE
+  //   ],
+  // },
+  // {
+  //   title: 'mainMenu.utenti',
+  //   to: '/todo',
+  //   allowedTypes: [
+  //     UserTypes.FONDO,
+  //     UserTypes.BACKOFFICE
+  //   ],
+  //   icon: 'mdi-account-multiple',
+  //   disabled: true
+  // },
 ]
 
 ////////

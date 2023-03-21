@@ -4,6 +4,7 @@ enum AgreementStatusEnum {
   CONSOLIDATED = 1,
   ACTIVE = 2,
   REJECTED = 3,
+  CLOSED = 4,
 }
 
 export default AgreementStatusEnum

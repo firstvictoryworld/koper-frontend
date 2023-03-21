@@ -29,29 +29,29 @@
         center-active
         show-arrows
       >
-        <v-tab v-if="usersStore.isStruttura && usersStore.structureCompleted" value="structure">{{ $t('registry.tabs.structure') }}</v-tab>
-        <v-tab v-if="usersStore.isStruttura && usersStore.structureCompleted" value="users">{{ $t('registry.tabs.users') }}</v-tab>
-        <v-tab v-if="usersStore.isStruttura && usersStore.structureCompleted" value="bank">{{ $t('registry.tabs.bankAccount') }}</v-tab>
-        <v-tab v-if="usersStore.isStruttura && usersStore.structureCompleted" value="contacts">{{ $t('registry.tabs.contacts') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="structure">{{ $t('registry.tabs.structure') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="users">{{ $t('registry.tabs.users') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="bank">{{ $t('registry.tabs.bankAccount') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="contacts">{{ $t('registry.tabs.contacts') }}</v-tab>
       </v-tabs>
 
       <v-card-text>
         <v-window v-model="tabs.value" class="pt-1">
 
-          <v-window-item v-if="usersStore.isStruttura" value="structure">
-            <StructureDetails />
+          <v-window-item v-if="usersStore.isStruttura || usersStore.isUtente" value="structure">
+            <StructureDetails :structure-id="usersStore.userDetails.structureId || undefined" :show="true"/>
           </v-window-item>
 
-          <v-window-item value="users">
+          <v-window-item v-if="usersStore.isStruttura || usersStore.isUtente" value="users">
             <StructureUsers />
           </v-window-item>
 
-          <v-window-item v-if="usersStore.isStruttura" value="bank">
-            <BankAccount />
+          <v-window-item v-if="usersStore.isStruttura || usersStore.isUtente" value="bank">
+            <BankAccount :structure-id="usersStore.userDetails.structureId || undefined" :show="true"/>
           </v-window-item>
 
-          <v-window-item v-if="usersStore.isStruttura" value="contacts">
-            <StructureContacts />
+          <v-window-item v-if="usersStore.isStruttura || usersStore.isUtente" value="contacts">
+            <StructureContacts :structure-id="usersStore.userDetails.structureId || undefined" :show="true"/>
           </v-window-item>
 
           <v-window-item value="password">
@@ -70,6 +70,7 @@ import StructureUsers from '@/components/structure-registry/StructureUsers.vue'
 import StructureContacts from '@/components/structure-registry/StructureContacts.vue'
 import BankAccount from '@/components/structure-registry/BankAccount.vue'
 import PageDescription from '@/components/common/PageDescription.vue'
+import UserAccesses from "@/enums/UserAccessesEnum";
 import { reactive } from 'vue'
 
 // Variables

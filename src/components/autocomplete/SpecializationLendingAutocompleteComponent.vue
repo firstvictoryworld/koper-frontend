@@ -19,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import lendings from '@/locales/it-IT/lendings'
 import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
 import { debounce } from 'lodash'
@@ -30,6 +31,7 @@ interface Props {
   binds?: Record<string, any>
   lendingId?: undefined | number | null
   doctorId?: undefined | number | null
+  bookingId?:  undefined | number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -68,15 +70,10 @@ const unwatchSelected = watch(() => props.value, (selectedValue) => {
   loadData(selectedValue)
 })
 
-watch(() => props.lendingId, () => {
-  input.model = null
+const unwatchDoctor = watch(() => props.doctorId, (doctor) => {
+  input.model = props.value
   loadData()
-});
-
-watch(() => props.doctorId, () => {
-  input.model = null
-  loadData()
-});
+})
 
 // Functions
 
@@ -87,13 +84,17 @@ const getItemTitle = (item: Record<string, any>) => {
 const loadData = debounce(async (selected: any = null) => {
   toggleLoading()
 
-const url = `/specializations/lendings${ props.lendingId ? `/${props.lendingId}` : '' }/doctors${ props.doctorId ? `/${props.doctorId}` : ''}`
-
+const url = `/specializations`
+console.log(props?.bookingId);
   await $axios?.get(url, {
     params: {
       selected,
+      doctors: props?.doctorId ,
       options: true,
-      search: input.search
+      limit: 100,
+      search: input.search,
+      lending: props?.lendingId,
+      booking_id: props?.bookingId
     }
   })
     .then(({ data }) => {
@@ -109,11 +110,14 @@ const url = `/specializations/lendings${ props.lendingId ? `/${props.lendingId}`
 
 onMounted(() => {
   loadData(props.value || null)
+  
 })
 
 onBeforeUnmount(() => {
   unwatchSearch()
   unwatchModel()
   unwatchSelected()
+  unwatchDoctor()
+  
 })
 </script>

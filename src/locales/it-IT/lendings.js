@@ -5,6 +5,8 @@ export default {
       name: 'Nome',
       code: 'Codice',
       cost: 'Costo prestazione',
+      recovery: 'Ricoveri',
+      interventions: 'Interventi',
     },
     documents: {
       title: 'Documenti',

@@ -8,8 +8,8 @@
 
         <v-spacer/>
 
-        <div v-if="!noSearchable" class="d-flex align-center justify-end pt-1 w-100" style="max-width:300px">
-          <v-text-field v-model="table.search" :label="$t('search')" prepend-inner-icon="mdi-magnify"
+        <div class="d-flex align-center justify-end pt-1 w-100" style="max-width:300px">
+          <v-text-field v-show="!noSearchable" v-model="table.search" :label="$t('search')" prepend-inner-icon="mdi-magnify"
             variant="outlined" density="compact" hide-details class="w-100" />
 
           <v-btn variant="plain" color="koperniko-primary" class="ml-1" min-width="0" width="40" @click="loadData">
@@ -20,9 +20,16 @@
 
       <v-card-subtitle v-if="subtitle">{{ subtitle }}</v-card-subtitle>
 
-      <v-divider v-if="!noSearchable" class="mt-2 mb-3" />
+      <v-divider class="mt-2 mb-3" />
     </v-card-item>
 
+    <v-spacer/>
+
+    <slot name="subheader">
+    </slot>
+
+    <v-spacer/>
+    
     <v-card-text>
       <v-table>
 
@@ -39,10 +46,13 @@
             <td v-for="(col, j) of cols" :key="`td-${i}-${j}`" :style="{ width: !!col.actions ? '10px' : undefined }">
 
               <div v-if="!!col.actions" class="d-flex justify-center align-center">
-                <v-btn v-for="(btn, k) of col.actions" :key="`${i}-${j}-${k}`" v-bind="btn.btnProps"
+                <v-btn v-for="(btn, k) of col.actions" :key="`${i}-${j}-${k}`"
                   icon
                   :color="btn.color || 'koperniko-primary'"
                   density="comfortable"
+                  v-bind="btn.btnProps"
+                  v-show="!!btn.show ? btn.show(row) : true"
+                  :disabled="typeof btn.btnProps?.disabled === 'function' ? btn.btnProps.disabled(row) : btn.btnProps?.disabled"
                   @click="() => btn.handler(row)">
                   <v-icon size="17">{{ btn.icon }}</v-icon> 
                 </v-btn>
@@ -50,7 +60,7 @@
 
               <!-- Per customizzare i valori nelle celle usare lo slot: <template #col-id="{ row }"> ... </template> -->
               <slot v-else :name="`col-${col.key}`" :row="row">
-                {{ row[col.key] || '' }}
+                {{ row[col.key] ?? '' }}
               </slot>
            
             </td>
@@ -58,22 +68,9 @@
         </tbody>
 
       </v-table>
-      <div v-if="totalTitle " class="mt-5" style = "text-align: right; padding: 0px 50px;">
-        <b class="mr-5 mt-5">{{ totalTitle }}</b> <b>€ {{table.totalCost}} </b>
-      </div>
 
-      <div v-if="totalFundCostTitle" style = "text-align: right; padding: 0px 50px;">
-        <b class="mr-5 mt-5">{{ totalFundCostTitle }}</b> <b>€ {{table.totalFundCost}} </b>
-      </div>
+      <slot name="totals"></slot>
 
-      <div v-if="totalStructureCostTitle" style = "text-align: right; padding: 0px 50px;">
-        <b class="mr-5 mt-5">{{ totalStructureCostTitle }}</b> <b>€ {{table.totalStructureCost}} </b>
-      </div>
-      
-      <div v-if="totalPatientCostTitle" style = "text-align: right; padding: 0px 50px;">
-        <b class="mr-5 mt-5">{{ totalPatientCostTitle }}</b> <b>€ {{table.totalPatientCost}} </b>
-      </div>
-     
       <div v-if="showPagination" class="text-center mt-5">
         <v-pagination v-model="table.page" density="comfortable" :length="table.lastPage" :total-visible="5" />
       </div>
@@ -84,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import type { DatatableRowInterface, DatatableColInterface } from '@/@types'
+import type { DatatableRowInterface, DatatableColInterface, DatatableStampInterface } from '@/@types'
 import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
 import { debounce } from 'lodash'
@@ -102,10 +99,7 @@ interface Props {
   totalCost?: number | 0
   totalTitle?: undefined | string 
   noSearchable?: undefined | boolean
-  totalFundCostTitle?: undefined | string 
-  totalStructureCostTitle?: undefined | string 
-  totalPatientCostTitle?: undefined | string 
-
+  queryParams?: undefined | Record<string, any>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -123,10 +117,10 @@ const table = reactive({
   rows: [] as DatatableRowInterface[],
   search: '',
   totalCost: 0,
-  totalFundCost: 0,
-  totalStructureCost: 0,
-  totalPatientCost: 0,
+  stamp: [] as DatatableStampInterface[],
 })
+
+const emit = defineEmits(['loaded']);
 
 // VueUse composables
 
@@ -141,30 +135,38 @@ const showPagination = computed(() => props.perPage !== 'infinite')
 
 // Functions
 
+let controller: undefined | AbortController
+
 const loadData = debounce(async () => {
 
   if (!props.url) { return }
 
+  if (controller && isLoading) {
+    controller.abort()
+  }
+
+  controller = new AbortController()
+
   toggleLoading()
 
   await $axios?.get(props.url, {
+    signal: controller.signal,
     params: {
       search: table.search,
       page: table.page,
       per_page: table.perPage,
       order: props.order || '', // TODO make order customizable
       direction: props.direction || '', // TODO make direction customizable
+      ...(props.queryParams || {})
     }
   })
     .then(({ data }) => {
-      const { data: rows, total, last_page, total_cost, tot_fund, tot_structure, tot_patient } = data
+      const { data: rows, total, last_page, ...rest } = data
       table.rows = rows || []
       table.total = total || 0
       table.lastPage = last_page || 1
-      table.totalCost = total_cost || 0
-      table.totalFundCost = tot_fund || 0
-      table.totalStructureCost = tot_structure || 0
-      table.totalPatientCost = tot_patient || 0
+
+      emit('loaded', { ...table, ...rest })
     })
     .catch(console.error)
 
@@ -181,6 +183,5 @@ onBeforeUnmount(() => {
   unwatchSearch && unwatchSearch()
   unwatchPage && unwatchPage()
 })
-
 
 </script>

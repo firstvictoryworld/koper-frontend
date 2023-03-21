@@ -33,7 +33,8 @@ interface Record {
 }
 
 interface Props {
-  data: Record
+  data: Record,
+  readonly?: boolean
 }
 
 defineProps<Props>()

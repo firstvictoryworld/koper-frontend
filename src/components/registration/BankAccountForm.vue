@@ -1,6 +1,7 @@
 <template>
   <card-container
-    :title="$t('registration.bankAccount.title')">
+    :title="$t('registration.bankAccount.title')"
+    :subtitle="$t('registration.bankAccount.subtitle')">
     <v-row>
       <v-col v-for="key in keys" :key="key" cols="12" md="4">
         <v-text-field
@@ -12,6 +13,7 @@
           :label="$t(`registration.bankAccount.${key}`)"
           :rules="[requiredValidation]"
           @update:modelValue="(value: string) => $emit('update:data', { ...data, [key]: value })"
+          :disabled="!!props.readonly"
         />
       </v-col>
     </v-row>
@@ -38,6 +40,7 @@ interface Record {
 
 interface Props {
   data: Record
+  readonly?: boolean
 }
 
 const props = defineProps<Props>()

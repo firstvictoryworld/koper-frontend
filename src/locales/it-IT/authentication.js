@@ -9,7 +9,8 @@ export default {
       },
       errors: {
         unauthorized: 'Le credenziali non sono valide. Si prega di riprovare.'
-      }
+      },
+      forgotPassword: 'Password dimenticata'
     },
     changePassword: 'Modifica password',
     createPassword: {
@@ -18,6 +19,13 @@ export default {
         password: 'Password',
         password_confirmation: 'Conferma password',
       },
+    },
+    forgotPassword: {
+      title: 'Password dimenticata',
+      emailAndUsername: 'Codice utente',
+      submit: 'Invia',
+      message: 'Una nuova email per il login è stata inviata',
+      error: 'L`utente non esiste'
     }
   },
 }

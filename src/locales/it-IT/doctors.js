@@ -3,6 +3,7 @@ export default {
     title: 'Elenco medici',
     subtitle: 'Di seguito sono riportati i medici codificati.',
     list: {
+      checkbox: '',
       id: '#',
       name: 'Nome',
       surname: 'Cognome',
@@ -24,7 +25,20 @@ export default {
       online: 'Online',
     },
     lending: {
-      cost: 'Costo'
+      title: 'Prestazioni Medico',
+      id: '#',
+      lending_name: 'Nome',
+      code: 'Codice',
+      cost: 'Costo',
+      specialization_name: 'Specializzazione',
+      recovery: 'Ricovero',
+      interventions: 'Interventi',
+    },
+    import: {
+      title: 'Caricamento dei Medici',
+      info_download: 'Si prega di scarica il file di esemprio per il caricamento dei medici',
+      success: 'Il caricamento è avennuto con successo',
+      file: 'File',
     }
   }
 }

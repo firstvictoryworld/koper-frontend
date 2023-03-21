@@ -26,7 +26,14 @@ export const useUsersStore = defineStore('users', () => {
     surname: null,
     type: null,
     structureId: null,
-    structureStatus: null
+    structureStatus: null,
+    accesses: [],
+    structureCompanies: [],
+    structureCode: null,
+    structurePostalCode: null,
+    structureVatNumber: null,
+    structureProvince: null,
+    structureCity: null
   })
 
   // Getters/Computed
@@ -36,7 +43,10 @@ export const useUsersStore = defineStore('users', () => {
   const isFondo = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.FONDO)
   const isBackoffice = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.BACKOFFICE)
   const isStruttura = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.STRUTTURA)
-  const role = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.FONDO ? 'Fondo' : !!userDetails.value.id && userDetails.value.type === UserTypes.BACKOFFICE ? 'Admin' : 'Struttura')
+  const isUtente = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.UTENTE)
+  const role = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.FONDO ? 'Fondo' : !!userDetails.value.id && userDetails.value.type === UserTypes.BACKOFFICE ? 'Admin' : !!userDetails.value.id && userDetails.value.type === UserTypes.STRUTTURA ?'Struttura' : 'Utente')
+  const hasAccesses = computed(() => !!userDetails.value.accesses)
+  
   const bearerToken = computed(() => userDetails.value.id ? `Bearer ${userDetails.value.authToken}` : '')
   const initials = computed(() => {
     return userDetails.value.id
@@ -56,19 +66,30 @@ export const useUsersStore = defineStore('users', () => {
     () => isAdmin.value || userDetails.value.structureStatus === StructureStatusEnum.COMPLETED
   )
 
+  const structureTypes = computed(
+    () => {
+      if (isStruttura.value || isUtente.value ){
+      return  userDetails.value.structureCompanies.map((company) => company.type)
+      }
+    }
+  )
+
   // Actions/Functions
 
   const assignUserDetails = (response: LoginResponse, update: boolean = false) => {
     const _data = {} as UserData
     const { jwt } = response
-    const { email, id, name, surname, type, structure_data } = response.data
-    const { id: structureId, status: structureStatus } = structure_data || {}
+    const { email, id, name, surname, type, structure_data, accesses } = response.data
+    const { id: structureId, status: structureStatus, code: structureCode, business_name: structureBusinessName, 
+            city: structureCity, vat_number: structureVatNumber, address: structureAddress, postal_code: structurePostalCode, 
+            province: structureProvince, structure_types: structureCompanies } = structure_data || {}
 
     if (!update) {
       Object.assign(
         _data,
         { authToken: jwt },
-        { email, id, name, surname, type, structureId, structureStatus }
+        { email, id, name, surname, type, structureId, structureStatus, accesses, 
+          structureCode, structureBusinessName, structureCity, structureVatNumber, structureAddress, structureCompanies }
       )
     } else {
       Object.assign(
@@ -82,6 +103,15 @@ export const useUsersStore = defineStore('users', () => {
           type: type || userDetails.value.type,
           structureId: structureId || userDetails.value.structureId,
           structureStatus: structureStatus || userDetails.value.structureStatus,
+          structureCompanies: structureCompanies || userDetails.value.structureCompanies,
+          accesses: accesses || userDetails.value.accesses,
+          structureCode: structureCode || userDetails.value.structureCode,
+          structureBusinessName: structureBusinessName || userDetails.value.structureBusinessName,
+          structureCity: structureCity || userDetails.value.structureCity,
+          structureVatNumber: structureVatNumber || userDetails.value.structureVatNumber,
+          structureAddress: structureAddress || userDetails.value.structureAddress,
+          structurePostalCode: structurePostalCode || userDetails.value.structurePostalCode,
+          structureProvince: structureProvince || userDetails.value.structureProvince
         }
       )
     }
@@ -102,6 +132,7 @@ export const useUsersStore = defineStore('users', () => {
     isFondo,
     isBackoffice,
     isStruttura,
+    isUtente,
     isLogged,
     logout,
     userDetails,
@@ -111,7 +142,8 @@ export const useUsersStore = defineStore('users', () => {
     structureRejected,
     structureNotApproved,
     structureNotCompleted,
-    structureCompleted
+    structureCompleted,
+    structureTypes
   }
 }, {
   persist: true

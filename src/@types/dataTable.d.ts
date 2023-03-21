@@ -1,11 +1,14 @@
 
-type DatatableActionFunction = (row: DatatableRowInterface) => void
+type DatatableActionFunctionType = (row: DatatableRowInterface) => void
+type DatatableShowFunctionType = (row: DatatableRowInterface) => boolean
+type DataTableBtnPropType = string | number | boolean | any[] | ((row: DatatableRowInterface) => any)
 
 interface DatatableActionInterface {
-  btnProps?: Record<string, any>
+  btnProps?: Record<string, DataTableBtnPropType>
   icon?: string
   color?: string
-  handler: DatatableActionFunction
+  handler: DatatableActionFunctionType
+  show?: DatatableShowFunctionType
 }
 
 export interface DatatableColInterface {
@@ -18,6 +21,12 @@ export interface DatatableColInterface {
 
 export interface DatatableRowInterface {
   [key: string]: any
+}
+
+export interface DatatableStampInterface {
+  name: string
+  quantity?: number
+  total_stamp?: number
 }
 
 export interface DatatableComponent {

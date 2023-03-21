@@ -30,6 +30,9 @@ interface Props {
   returnObject?: boolean
   binds?: Record<string, any>
   lendingId?: undefined | number | null
+  specializationId?:  undefined | number | null
+  structureId?:  undefined | number | null
+  bookingId?: undefined | number | null
 }
 
 const usersStore = useUsersStore()
@@ -70,10 +73,10 @@ const unwatchSelected = watch(() => props.value, (selectedValue) => {
   loadData(selectedValue)
 })
 
-watch(() => props.lendingId, () => {
-  input.model = null
+const unwatchSpecialization = watch(() => props.specializationId, (specialization) => {
+  input.model = props.value
   loadData()
-});
+})
 
 // Functions
 
@@ -86,13 +89,16 @@ const getItemTitle = (item: Record<string, any>) => {
 const loadData = debounce(async (selected: any = null) => {
   toggleLoading()
 
-  const url = `/doctors/lendings${ props.lendingId ? `/${props.lendingId}` : '' }`
+  const url = `/doctors`
 
   await $axios?.get(url, {
     params: {
       selected,
       options: true,
-      search: input.search
+      search: input.search,
+      specializations: props.specializationId,
+      structure_data_id: props.structureId,
+      booking_id: props.bookingId
     }
   })
     .then(({ data }) => {

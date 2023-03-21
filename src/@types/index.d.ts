@@ -4,7 +4,7 @@ import { LoginResponse } from './response'
 import { StructureType } from './structure'
 import { FieldInterface } from './form'
 import { RouteMiddlewareFunction } from './routes'
-import { DatatableColInterface, DatatableRowInterface, DatatableComponent } from './dataTable'
+import { DatatableColInterface, DatatableRowInterface, DatatableComponent, DatatableStampInterface } from './dataTable'
 
 export {
   HTMLInputEvent,
@@ -16,5 +16,6 @@ export {
   RouteMiddlewareFunction,
   DatatableColInterface,
   DatatableRowInterface,
+  DatatableStampInterface,
   DatatableComponent
 }

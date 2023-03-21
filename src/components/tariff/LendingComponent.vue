@@ -25,18 +25,24 @@
 
       <template v-for="(field, i) in fields">    
         <v-col
-          v-if="(isHeader && ['code', 'name'].includes(field.key)) || (!isHeader && fieldKeys.includes(field.key))"
+          v-if="(isHeader && ['name'].includes(field.key)) || (!isHeader && fieldKeys.includes(field.key))"
           :key="`${indexes.join('-')}-${field.key}-${i}`"
           :cols="field.width ? 'auto' : true"
           :style="{ width: field.width ? `${field.width}px` : undefined }"
         >
           <template v-if="readonlyField || !activeFieldKeys.includes(field.key)">
             <div class="d-block lending-label text-caption">{{ field.label }}</div>
-            <div class="d-block lending-value">{{
-              field.key !== 'type'
-                ? (props.data[field.key as keyof LendingInterface] || '-')
+            <div v-if="field.key !== 'lending_cost' && field.key !== 'structure_cost'" class="d-block lending-value">{{
+                (field.key !== 'type')
+                ? (props.data[field.key as keyof LendingInterface] || '-') 
                 : (locales.types[props.data[field.key as keyof LendingInterface] as any] || '-')
             }}</div>
+             <div v-else-if="field.key === 'lending_cost' || field.key === 'structure_cost'" class="d-block lending-value">{{
+              (props.data?.lending_agreements?.length )
+                ? props.data?.lending_agreements[0].agreeded_cost :  '-'
+
+            }}</div>
+           
           </template>
 
           <v-select
@@ -174,6 +180,7 @@ import { removeLending, updateLending, addLending, setupType } from './lendingLo
 export interface LendingInterface {
   id: number | null
   code: string
+  fund_code: string
   name: string
   parent_id: number | null
   type?: string
@@ -184,6 +191,7 @@ export interface LendingInterface {
   serious_illness: number
   refund_value?: number
   lending_cost?: number
+  agreeded_cost?: number
   structure_cost?: number
   children: LendingInterface[]
   children_count?: number
@@ -204,6 +212,7 @@ export interface LendingAgreededInterface {
   lending_id: number | null
   refund_value?: number
   lending_cost?: number
+  agreeded_cost?: number
   current_lending_proposals: LendingProposalInterface[]
 }
 
@@ -228,6 +237,7 @@ const props = withDefaults(defineProps<Props>(), {
     
     return { 
       code: i18n.t('lending.code'),
+      fund_code: i18n.t('lending.fund_code'),
       name: i18n.t('lending.name'),
       type: i18n.t('lending.type'),
       types: {
@@ -239,6 +249,7 @@ const props = withDefaults(defineProps<Props>(), {
       },
       refund_value: i18n.t('lending.refund_value'),
       lending_cost: i18n.t('lending.lending_cost'),
+      agreeded_cost: i18n.t('lending.agreeded_cost'),
       structure_cost: i18n.t('lending.structure_cost'),
       addCategoryLending: i18n.t('lending.addCategoryLending'),
       addLending: i18n.t('lending.addLending'),
@@ -251,11 +262,13 @@ const usersStore = useUsersStore()
 const $axios = inject(axiosInjectKey)
 
 const fields: UnwrapNestedRefs<{ key: FieldKeys, label: string; rules: ValidationRule[], type: string, width?: number }[]> = reactive([
-  { key: 'code', label: props.locales.code, rules: [requiredValidation], type: 'text', width: 100 },
+  // { key: 'code', label: props.locales.code, rules: [requiredValidation], type: 'text', width: 100 },   
+  { key: 'fund_code', label: props.locales.fund_code, rules: [requiredValidation], type: 'text', width: 100 },
   { key: 'name', label: props.locales.name, rules: [requiredValidation], type: 'text' },
   { key: 'type', label: props.locales.type, rules: [requiredValidation], type: 'select' },
   { key: 'refund_value', label: props.locales.refund_value, rules: [requiredValidation, currencyValidation], type: 'number', width: 200 },
   { key: 'lending_cost', label: props.locales.lending_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
+  { key: 'agreeded_cost', label: props.locales.agreeded_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
   { key: 'structure_cost', label: props.locales.structure_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
 ])
 
@@ -263,10 +276,12 @@ const local = reactive({
   backup: null as null | Record<FieldKeys, any>,
   fields: {
     code: props.data.code || '',
+    fund_code: props.data.fund_code || '',
     name: props.data.name || '',
     type: props.data.type as undefined | number,
     refund_value: props.data.refund_value as undefined | number,
     lending_cost: props.data.lending_cost as undefined | number,
+    agreeded_cost: props.data.lending_agreements as undefined | number,
     structure_cost: props.data.structure_cost as undefined | number,
   } as Record<FieldKeys, any>,
 })
@@ -311,8 +326,8 @@ const canAddLending = computed(() => {
 })
 
 const fieldKeys = computed(() => agreementMode.value === true
-  ? ['code', 'name', 'type', 'refund_value', 'lending_cost', 'structure_cost']
-  : ['code', 'name', 'type', 'refund_value', 'lending_cost']
+  ? ['code','fund_code', 'name', 'type', 'refund_value', 'lending_cost', 'structure_cost']
+  : ['code', 'fund_code', 'name', 'type', 'refund_value', 'lending_cost']
 )
 
 const activeFieldKeys = computed(() => agreementMode.value === true
@@ -348,10 +363,10 @@ const readonlyField = computed(() =>
 
 const agreeable = computed(() => 
   !props.readonly &&
-  !!props.data.code &&
+  // !!props.data.code &&
+  !!props.data.fund_code &&
   !!props.data.name &&
-  !!props.data.refund_value &&
-  !!props.data.lending_cost
+  !!props.data.refund_value
 )
 
 // Elements

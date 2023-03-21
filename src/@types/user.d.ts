@@ -12,4 +12,13 @@ export interface UserData {
   type: number | null
   structureId: number | null
   structureStatus: number | null
+  accesses: array | null
+  structureCode: string | null
+  structureBusinessName: string | null
+  structureCity: string | null
+  structureVatNumber: string | null
+  structureAddress: string | null
+  structurePostalCode: string | null
+  structureProvince: string | null
+  structureCompanies: array| null
 }

@@ -8,9 +8,7 @@
 
               <v-divider v-if="field.type === 'separator'" />
 
-            
-
-              <v-checkbox
+              <v-checkbox :v-show="!isStruttura.value"
                 v-else-if="field.type === 'checkbox'"
                 v-model="field.value"
                 :true-value="1"
@@ -57,28 +55,26 @@ import { axiosInjectKey } from '@/utils/axios';
 import { emailValidation, requiredValidation } from '@/validation/rules';
 import { useToggle } from '@vueuse/shared';
 import { each, mapValues } from 'lodash';
-import { computed, inject, onMounted, reactive, ref, type GlobalComponents, type Ref } from 'vue';
-
+import { computed, inject, onBeforeMount, onMounted, reactive, ref, type GlobalComponents, type Ref } from 'vue';
+import UserTypes from '@/enums/UserTypesEnum'
 
 const props = defineProps<{
   userId: null|number
+  structureId: undefined|number
 }>()
 
 const $axios = inject(axiosInjectKey)
-const usersStore = useUsersStore()
 
 const form = reactive({ status: true, hasErrors: false })
 const fields = reactive({
   id: { value: props.userId, rules: [], type: 'hidden' },
+  type: { value: 0, rules: [], type: 'separator' },
   name: { value: '', rules: [requiredValidation], type: 'text' },
   surname: { value: '', rules: [requiredValidation], type: 'text' },
-  username: { value: '', rules: [requiredValidation], type: 'text' },
   email: { value: '', rules: [requiredValidation, emailValidation], type: 'text' },
   separator1: { value: null, rules: [], type: 'separator' },
-  structure: { value: 0, rules: [], type: 'checkbox' },
-  tariff: { value: 0, rules: [], type: 'checkbox' },
+  tariff: { value: 0, rules: [], type: 'checkbox',  show: () => false},
   doctors: { value: 0, rules: [], type: 'checkbox'},
-  specializations: { value: 0, rules: [], type: 'checkbox' },
   negotiation: { value: 0, rules: [], type: 'checkbox' },
   deeds: { value: 0, rules: [], type: 'checkbox' },
   certification: { value: 0, rules: [], type: 'checkbox' },
@@ -90,6 +86,7 @@ const fields = reactive({
 
 // Computed
 const isEditing = computed(() => !!fields.id.value)
+const isStruttura = computed(() => fields.type.value === UserTypes.STRUTTURA)
 
 // Events
 const emit = defineEmits(['updated']);
@@ -151,4 +148,5 @@ const loadData = async () => {
 onMounted(() => {
   loadData()
 })
+
 </script>

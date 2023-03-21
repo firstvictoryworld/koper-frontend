@@ -2,12 +2,24 @@
 <template>
   <DataTable ref="refTable" :cols="cols" url="/bookings" local-prefix="bookings.list." class="mt-5">
     <template #header>
-      <v-btn v-if="userData.isStruttura" class="ml-3" variant="flat" color="koperniko-primary" @click="() => booking.id = null">
+      <v-btn v-if="userStore.isStruttura || userStore.isUtente" class="ml-3" variant="flat" color="koperniko-primary" @click="() => booking.id = null">
         {{ $t('add') }} 
       </v-btn>
+      <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading=isDownloading   >
+        {{ $t('download') }} 
+      </v-btn>
+    
+    </template>
+    <template #col-checkbox="{row }">
+      <v-checkbox  hide-details="auto" color="koperniko-secondary"
+        variant="outlined"  density="compact" :value="row.id" v-model="ids"   
+       />
     </template>
 
-    
+    <template #col-id="{ row }">
+      {{ row.fund_id ?? row.id }}
+    </template>
+
     <template #col-structure="{ row }">
       {{ row.structure_data.business_name }}
     </template>
@@ -43,7 +55,7 @@
       <div id="booking-toolbar-target" class="d-flex justify-center align-center"></div>
     </template>
 
-    <BookingsEditComponent v-if="booking.id !== undefined" class="mt-5" :booking-id="booking.id" @updated="() => reload()" @close="() => booking.id = undefined" />
+    <BookingsEditComponent v-if="booking.id !== undefined" :readonly="readonly.value" class="mt-5" :booking-id="booking.id" :structure-id="structureData.id" @updated="() => reload()" @close="() => booking.id = undefined" />
   </FullDialog>
 </template>
 
@@ -51,23 +63,39 @@
 import type { DatatableColInterface, DatatableComponent } from '@/@types'
 import BookingStatusEnum from '@/enums/BookingStatusEnum'
 import { useUsersStore } from '@/stores/users'
-import { reactive, ref, type Ref } from 'vue'
-import DataTable from '../common/DataTable.vue'
-import FullDialog from '../common/FullDialog.vue'
+import {inject, reactive, ref, type Ref } from 'vue'
+import { each, forEach, get, mapValues, set } from 'lodash'
+import DataTable from '@/components/common/DataTable.vue'
+import FullDialog from '@/components/common/FullDialog.vue'
 import BookingsEditComponent from './BookingsEditComponent.vue'
+import { useToggle } from '@vueuse/shared'
+import { axiosInjectKey } from '@/utils/axios';
+import JsFileDownloader from 'js-file-downloader'
+import useBooking from '@/use/useBooking'
 
-const userData = useUsersStore()
+const userStore = useUsersStore()
+
+const [isDownloading, toggleDownload] = useToggle()
+
+const $axios = inject(axiosInjectKey)
 
 const cols = reactive([
+  { key: 'checkbox' },
   { key: 'id' },
-  { key: 'structure'},
+  ...(userStore.isAdmin ? [
+    { key: 'structure' },
+   
+  ] : []),
   { key: 'fiscal_code' },
   { key: 'nominative' },
   { key: 'type' },
+  { key: 'created_at'},
   { key: 'status' },
   { label: '', key: '', actions:
     [
-      { icon: 'mdi-pencil', handler(row) { show(row) } }
+      { icon: 'mdi-pencil', handler(row) { show(row) }, btnProps: { class: 'mr-3' }, show: (row) => row.status !=  BookingStatusEnum.PRESENTED_TO_THE_FUND },
+      { icon: 'mdi-eye', handler(row) { show(row) }, btnProps: {class: 'mr-3' }, show: (row) => row.status ===  BookingStatusEnum.PRESENTED_TO_THE_FUND },
+      { icon: 'mdi-download', handler(row) { downloadPDF(row) }, btnProps: { loading: isDownloading } },
     ]
   },
 ] as DatatableColInterface[])
@@ -77,32 +105,77 @@ const booking = reactive({
   id: undefined as undefined|null|number
 })
 
+const structureData = reactive({
+  id: null
+})
+
+const readonly = reactive({
+  value: false
+})
+
+
 // Elements
 const refTable: Ref<null | DatatableComponent> = ref(null)
+const ids = ref([])
 
 // Functions
 
 const show = (row: Record<string, any>) => {
   booking.id = row.id || null
+  readonly.value =  userStore.isFondo ? false : row.status === BookingStatusEnum.PRESENTED_TO_THE_FUND
+  structureData.id = row.structure_data.id || null
+}
+
+const downloadPDF = async (row: Record<string, any>) => {
+  toggleDownload()
+
+  const { baseURL } = $axios?.defaults || {}
+  const url = `${baseURL}/bookings/${row.id}/download`
+
+  await new JsFileDownloader({
+      url,
+      filename: `booking_number_${row.id}.pdf`,
+      withCredentials: true,
+      headers: [
+        { name: 'Authorization', value: userStore.bearerToken }
+      ],
+    })
+    .catch(console.error)
+
+  toggleDownload()
+}
+
+const downloadExcel = async () => {
+  toggleDownload()
+
+  const { baseURL } = $axios?.defaults || {}
+
+  const idsToString = ids.value.join(',')
+
+  const url = `${baseURL}/export/bookings/${idsToString}`
+
+  let date = new Date();
+  let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
+
+  await new JsFileDownloader({
+      url,
+      filename: `bookings_${currentDate}.xlsx`,
+      withCredentials: true,
+      headers: [
+        { name: 'Authorization', value: userStore.bearerToken }
+      ],
+    })
+    .catch(console.error)
+
+  ids.value = []
+
+  toggleDownload()
 }
 
 const reload = () => {
   refTable.value?.loadData()
 }
 
-const statusColor = (status: number): undefined|string => {
-  switch (status) {
-    case BookingStatusEnum.DELIVERED:
-      return 'blue'
-    case BookingStatusEnum.ELIGIBLE:
-      return 'green'
-    case BookingStatusEnum.CANCELED:
-    case BookingStatusEnum.REJECTED:
-      return 'red'
-    case BookingStatusEnum.TO_BE_VERIFIED:
-      return 'orange'
-    case BookingStatusEnum.DRAFT:
-      return 'yellow-darken-1'
-  }
-}
+const { statusColor } = useBooking()
+
 </script>

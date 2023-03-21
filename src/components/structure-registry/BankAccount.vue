@@ -1,12 +1,13 @@
 <template>
   <v-form ref="formEl" lazy-validation v-model="form.status" @submit.prevent="handleSubmit">
-    <BankAccountForm v-model:data="fields.bank" class="mb-5" />
+    <BankAccountForm v-model:data="fields.bank" :readonly=false class="mb-5" />
 
-    <v-card>
+    <v-card v-if="props.show">
       <v-card-text>
         <v-alert v-if="!form.status && form.hasErrors" type="error" class="mb-5">{{ $t('validation.errors.validationFail') }}</v-alert>
+        <v-alert v-if="readonly && updated.show" type="success">{{ $t('registration.updated') }}</v-alert>
 
-        <v-btn type="submit" class="d-block mx-auto" size="large" color="koperniko-primary" block
+        <v-btn type="submit" class="d-block mx-auto mt-5" size="large" color="koperniko-primary"
           :loading="isLoading">
           {{ $t('confirm') }}
         </v-btn>
@@ -16,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, reactive, ref, type GlobalComponents, type Ref } from 'vue'
+import { computed, inject, reactive, ref, type GlobalComponents, type Ref, onMounted } from 'vue'
 import ContactTypeEnum from '@/enums/ContactTypeEnum'
 import { map } from 'lodash'
 import BankAccountForm from '../registration/BankAccountForm.vue'
@@ -50,15 +51,25 @@ const fields = reactive({
   }
 })
 
+// Props
+const props = defineProps<{
+  readonly?: boolean
+  structureId?: number
+  show?: boolean
+}>()
+
+const updated = reactive({ show: false})
+
 // VueUse composables
 const [isLoading, toggleLoading] = useToggle(false)
 
 // Elements
 const formEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 
+
 // Functions
 const handleSubmit = async () => {
-
+  updated.show = false
   $reloadCurrentUser && $reloadCurrentUser()
 
   if (!formEl.value) { return }
@@ -71,12 +82,43 @@ const handleSubmit = async () => {
 
   toggleLoading()
 
-  await $axios?.post(`/registration-request/${usersStore.userDetails.structureId}/complete`, fields)
+  await $axios?.put(`/registration-request/${props.structureId}/complete`, fields)
     .then(async () => {
       $reloadCurrentUser && await $reloadCurrentUser()
+      if(props.structureId){ updated.show = true }
     })
     .catch(console.error)
 
   toggleLoading()
 }
+
+
+const loadData = async () => {
+  if (!props.structureId) { return }
+
+  toggleLoading()
+
+  await $axios?.get(`/registration-request/${props.structureId}`)
+    .then(({ data }) => {
+      fields.bank.accountholder = data.refound_data[0].accountholder,
+      fields.bank.iban = data.refound_data[0].iban,
+      fields.bank.bank = data.refound_data[0].bank,
+      fields.bank.agency_number = data.refound_data[0].agency_number,
+      fields.bank.address = data.refound_data[0].address,
+      fields.bank.house_number = data.refound_data[0].house_number,
+      fields.bank.postal_code = data.refound_data[0].postal_code,
+      fields.bank.city = data.refound_data[0].city,
+      fields.bank.province = data.refound_data[0].province,
+      fields.bank.current_account_no = data.refound_data[0].current_account_no
+
+    })
+    .catch(console.error)
+
+  toggleLoading()
+}
+
+onMounted(() => {
+  loadData()
+})
+
 </script>

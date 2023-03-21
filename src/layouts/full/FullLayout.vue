@@ -8,7 +8,9 @@
     <v-main>
       <v-container fluid class="page-wrapper">
         <RouterView />
+        
       </v-container>
+      <p style="text-align:center; padding:5;">V.{{ version }}</p>
     </v-main>
   </v-app>
 </template>
@@ -19,5 +21,7 @@ import VerticalSidebarVue from './LeftSidebar.vue'
 import VerticalHeaderVue from './HeaderNavbar.vue'
 import { useCustomizerStore } from '@/stores/customizer'
 
+
 const customizer = useCustomizerStore()
+const version = import.meta.env.VITE_APP_VERSION
 </script>

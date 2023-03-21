@@ -16,6 +16,7 @@
     v-bind="binds"
     clearable
   />
+
 </template>
 
 <script setup lang="ts">
@@ -29,6 +30,8 @@ interface Props {
   returnObject?: boolean
   binds?: Record<string, any>
   lendingId: undefined | number | null
+  bookingId: undefined | number | null
+  structureId:  undefined | number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -75,18 +78,21 @@ const unwatchSelected = watch(() => props.value, (selectedValue) => {
 // Functions
 
 const getItemTitle = (item: Record<string, any>) => {
-  return item ? `${item?.lending?.code} | ${item?.lending?.name}` : undefined
+  return item ? `${item?.lending?.fund_code} | ${item?.lending?.name}` : undefined
 }
 
 const loadData = debounce(async (selected: any = null) => {
   toggleLoading()
-  const url = `/lending-agreements`
+  const url = `/lending-agreements/booking/${props.bookingId}`
+
   await $axios?.get(url, {
     params: {
-      // selected,
+      where: {key:`lending_agreements.id`, value:selected?.id },
       options: true,
       search: input.search,
-      parent_id: props.lendingId
+      parent_id: props.lendingId,
+      limit: 100,
+      structure_data_id: props.structureId
     }
   })
     .then(({ data }) => {
