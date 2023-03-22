@@ -30,4 +30,14 @@ app.use(head)
 
 app.provide(axiosInjectKey, axios)
 
+app.directive('outsideClick', {
+	mounted: (el, bindings) => {
+		document.addEventListener('click', (e) => {
+			if (el && !el.contains(e.target)) {
+				bindings.value();
+			}
+		});
+	}
+})
+
 app.mount('#app')
