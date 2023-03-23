@@ -35,9 +35,7 @@
 
         <thead>
           <tr>
-            <th v-for="(col) of cols" :key="`th-${col.key}`" :class="col.class" v-bind="col.colProps">
-              {{ col.label !== undefined ? col.label : $t(`${localPrefix}${col.key}`) }}
-            </th>
+            <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterApply="onFilterApply" />
           </tr>
         </thead>
 
@@ -82,10 +80,11 @@
 
 <script setup lang="ts">
 import type { DatatableRowInterface, DatatableColInterface, DatatableStampInterface } from '@/@types'
+import DataTableHead from '@/components/common/DataTableHead.vue'
 import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
 import { debounce } from 'lodash'
-import { computed, inject, onBeforeUnmount, onMounted, reactive, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 interface Props {
   title?: string
@@ -102,6 +101,8 @@ interface Props {
   queryParams?: undefined | Record<string, any>
 }
 
+interface Filter { key: string, values: (string | number)[] }
+
 const props = withDefaults(defineProps<Props>(), {
   localPrefix: 'table.',
   perPage: 15
@@ -116,6 +117,7 @@ const table = reactive({
   lastPage: 1,
   rows: [] as DatatableRowInterface[],
   search: '',
+  filters: [] as Filter[],
   totalCost: 0,
   stamp: [] as DatatableStampInterface[],
 })
@@ -134,6 +136,35 @@ const unwatchPage = watch(() => table.page, () => { loadData() })
 const showPagination = computed(() => props.perPage !== 'infinite')
 
 // Functions
+
+const onFilterApply = (filter: Filter) => {
+	let index = table.filters.findIndex(_f => _f.key == filter.key);
+	if (index >= 0) {
+		table.filters = [
+			...table.filters.slice(0, index),
+			filter,
+			...table.filters.slice(index+1, table.filters.length)
+		]
+	} else {
+		table.filters = [
+			...table.filters,
+			filter
+		]
+		
+	}
+	loadData()
+}
+
+const getFilterQueryParams = () => {
+	let queryParams: any = {}
+	if (table.filters && table.filters.length) {
+		table.filters.forEach((filter) => {
+			queryParams[filter.key] = filter.values;
+		})
+	}
+
+	return queryParams
+}
 
 let controller: undefined | AbortController
 
@@ -157,7 +188,8 @@ const loadData = debounce(async () => {
       per_page: table.perPage,
       order: props.order || '', // TODO make order customizable
       direction: props.direction || '', // TODO make direction customizable
-      ...(props.queryParams || {})
+      ...(props.queryParams || {}),
+	  ...(getFilterQueryParams())
     }
   })
     .then(({ data }) => {

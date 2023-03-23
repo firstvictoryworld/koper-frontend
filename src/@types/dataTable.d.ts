@@ -17,6 +17,8 @@ export interface DatatableColInterface {
   class?: string
   colProps?: any
   actions?: DatatableActionInterface[]
+  enableFilter?: boolean
+  filterOptions?: { label: string, value: string | number }[]
 }
 
 export interface DatatableRowInterface {
