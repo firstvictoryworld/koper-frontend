@@ -19,6 +19,7 @@ export interface DatatableColInterface {
   actions?: DatatableActionInterface[]
   enableFilter?: boolean
   filterOptions?: { label: string, value: string | number }[]
+  enableSelectAll?: boolean
 }
 
 export interface DatatableRowInterface {
@@ -32,5 +33,11 @@ export interface DatatableStampInterface {
 }
 
 export interface DatatableComponent {
+  resetSelectAll(): void
   loadData(): void
+}
+
+export interface DatatableFilter {
+	key: string
+	values: (string | number)[]
 }

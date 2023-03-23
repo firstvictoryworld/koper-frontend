@@ -1,10 +1,11 @@
 <template>
 	<th :key="`th-${col.key}`" :class="col.class" v-bind="col.colProps">
 		<div v-outsideClick="outsideClickHandler" ref="filterContainerRef" style="position: relative">
-			<div :style="thWrapperStyle" @click="toggleFilter">
-				<span>{{ col.label !== undefined ? col.label : $t(`${localPrefix}${col.key}`) }}</span>
+			<div :style="thWrapperStyle">
+				<span v-if="!(col.key == 'checkbox')">{{ col.label !== undefined ? col.label : $t(`${localPrefix}${col.key}`) }}</span>
+				<slot v-else :name="`col-${col.key}`"></slot>
 				<div v-if="col.enableFilter">
-					<v-icon size="15" color="#aaa">mdi-filter-outline</v-icon>
+					<v-icon size="15" color="#aaa" @click="toggleFilter">mdi-filter-outline</v-icon>
 				</div>
 			</div>
 			<div v-if="col.enableFilter && openFilter" :style="filterDropStyle">

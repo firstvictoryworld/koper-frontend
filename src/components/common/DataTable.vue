@@ -35,7 +35,12 @@
 
         <thead>
           <tr>
-            <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterApply="onFilterApply" />
+            <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterApply="onFilterApply">
+				<template v-if="col.enableSelectAll" #col-checkbox>
+					<v-checkbox  hide-details="auto" color="koperniko-secondary"
+						variant="outlined"  density="compact" v-model="selectAll"/>
+				</template>
+			</DataTableHead>
           </tr>
         </thead>
 
@@ -80,11 +85,12 @@
 
 <script setup lang="ts">
 import type { DatatableRowInterface, DatatableColInterface, DatatableStampInterface } from '@/@types'
+import type { DatatableFilter } from '@/@types/dataTable'
 import DataTableHead from '@/components/common/DataTableHead.vue'
 import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
 import { debounce } from 'lodash'
-import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 
 interface Props {
   title?: string
@@ -101,8 +107,6 @@ interface Props {
   queryParams?: undefined | Record<string, any>
 }
 
-interface Filter { key: string, values: (string | number)[] }
-
 const props = withDefaults(defineProps<Props>(), {
   localPrefix: 'table.',
   perPage: 15
@@ -117,12 +121,14 @@ const table = reactive({
   lastPage: 1,
   rows: [] as DatatableRowInterface[],
   search: '',
-  filters: [] as Filter[],
+  filters: [] as DatatableFilter[],
   totalCost: 0,
   stamp: [] as DatatableStampInterface[],
 })
 
-const emit = defineEmits(['loaded']);
+const emit = defineEmits(['loaded', 'selectAll']);
+
+const selectAll = ref(false)
 
 // VueUse composables
 
@@ -131,13 +137,20 @@ const [isLoading, toggleLoading] = useToggle()
 // Watchers
 const unwatchSearch = watch(() => table.search, debounce(() => { table.page = 1; loadData() }, 600))
 const unwatchPage = watch(() => table.page, () => { loadData() })
+const unwatchSelectAll = watchEffect(() => {
+	emit('selectAll', selectAll.value)
+})
 
 // Computed
 const showPagination = computed(() => props.perPage !== 'infinite')
 
 // Functions
 
-const onFilterApply = (filter: Filter) => {
+const resetSelectAll = () => {
+	selectAll.value = false
+}
+
+const onFilterApply = (filter: DatatableFilter) => {
 	let index = table.filters.findIndex(_f => _f.key == filter.key);
 	if (index >= 0) {
 		table.filters = [
@@ -205,7 +218,7 @@ const loadData = debounce(async () => {
   toggleLoading()
 }, 150)
 
-defineExpose({ loadData })
+defineExpose({ resetSelectAll, loadData })
 
 onMounted(() => {
   loadData()
@@ -214,6 +227,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   unwatchSearch && unwatchSearch()
   unwatchPage && unwatchPage()
+  unwatchSelectAll && unwatchSelectAll()
 })
 
 </script>

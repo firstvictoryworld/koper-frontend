@@ -1,6 +1,6 @@
 
 <template>
-  <DataTable ref="refTable" :cols="cols" url="/bookings" local-prefix="bookings.list." class="mt-5">
+  <DataTable ref="refTable" :cols="cols" url="/bookings" local-prefix="bookings.list." class="mt-5" @loaded="onLoaded" @selectAll="onSelectAll">
     <template #header>
       <v-btn v-if="userStore.isStruttura || userStore.isUtente" class="ml-3" variant="flat" color="koperniko-primary" @click="() => booking.id = null">
         {{ $t('add') }} 
@@ -74,6 +74,7 @@ import JsFileDownloader from 'js-file-downloader'
 import useBooking from '@/use/useBooking'
 import BookingTypeEnum from '@/enums/BookingTypeEnum'
 import i18n from '@/locales'
+import type { DatatableFilter, DatatableRowInterface } from '@/@types/dataTable'
 
 const userStore = useUsersStore()
 
@@ -102,7 +103,7 @@ const bookingStatuses = [
 ]
 
 const cols = reactive([
-  { key: 'checkbox' },
+  { key: 'checkbox', enableSelectAll: true },
   { key: 'id' },
   ...(userStore.isAdmin ? [
     { key: 'structure' },
@@ -138,9 +139,34 @@ const readonly = reactive({
 
 // Elements
 const refTable: Ref<null | DatatableComponent> = ref(null)
-const ids = ref([])
+const ids = ref([] as any[])
+const allSelect = ref(false)
+const loadedData = ref({
+	search: '',
+	filters: [] as DatatableFilter[],
+	rows: [] as DatatableRowInterface[]
+});
 
 // Functions
+
+const onLoaded = (data: any) => {
+	loadedData.value = data
+	resetSelection()
+}
+
+const onSelectAll = (selected: boolean) => {
+	allSelect.value = !!selected
+
+	if (!!selected) {
+		selectAllRows()
+	} else {
+		ids.value = []
+	}
+}
+
+const selectAllRows = () => {
+	ids.value = loadedData.value?.rows ? loadedData.value.rows.map(row => row.id) : []
+}
 
 const show = (row: Record<string, any>) => {
   booking.id = row.id || null
@@ -172,9 +198,19 @@ const downloadExcel = async () => {
 
   const { baseURL } = $axios?.defaults || {}
 
-  const idsToString = ids.value.join(',')
+  const idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
+  const searchParams = new URLSearchParams()
+  searchParams.append('search', loadedData.value.search)
+  if (loadedData.value.filters && loadedData.value.filters.length) {
+	loadedData.value.filters.forEach(filter => {
+		filter.values.forEach(value => {
+			searchParams.append(`${filter.key}[]`, value.toString())
+		})
+	})
+  }
+  const queryParams = idsToString == 'all' ? searchParams.toString() : '';
 
-  const url = `${baseURL}/export/bookings/${idsToString}`
+  const url = `${baseURL}/export/bookings/${idsToString}?${queryParams}`
 
   let date = new Date();
   let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
@@ -189,9 +225,15 @@ const downloadExcel = async () => {
     })
     .catch(console.error)
 
-  ids.value = []
+  resetSelection()
 
   toggleDownload()
+}
+
+const resetSelection = () => {
+	ids.value = []
+
+	refTable.value?.resetSelectAll()
 }
 
 const reload = () => {
