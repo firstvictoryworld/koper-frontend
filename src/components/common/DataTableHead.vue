@@ -24,7 +24,7 @@
 						</v-btn>
 						<div></div>
 						<v-btn :size="'small'" @click="onClickApplyFilter">
-							Apply
+							{{ $t('apply') }}
 						</v-btn>
 					</v-card-actions>
 				</v-card>
