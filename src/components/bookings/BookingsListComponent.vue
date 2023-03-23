@@ -72,12 +72,34 @@ import { useToggle } from '@vueuse/shared'
 import { axiosInjectKey } from '@/utils/axios';
 import JsFileDownloader from 'js-file-downloader'
 import useBooking from '@/use/useBooking'
+import BookingTypeEnum from '@/enums/BookingTypeEnum'
+import i18n from '@/locales'
 
 const userStore = useUsersStore()
 
 const [isDownloading, toggleDownload] = useToggle()
 
 const $axios = inject(axiosInjectKey)
+
+const bookingTypes = [
+	BookingTypeEnum.AMBULATORIO,
+	BookingTypeEnum.RICOVERO,
+	BookingTypeEnum.ODONTOIATRICA,
+	BookingTypeEnum.PREVENZIONE,
+	BookingTypeEnum.GRAVI_MALATTIE
+]
+
+const bookingStatuses = [
+	BookingStatusEnum.DRAFT,
+	BookingStatusEnum.APPROVED,
+	BookingStatusEnum.BLOCKED,
+	BookingStatusEnum.REJECTED,
+	BookingStatusEnum.INTEGRATED,
+	BookingStatusEnum.CONCLUDED,
+	BookingStatusEnum.SUSPENDED,
+	BookingStatusEnum.PRESENTED_TO_THE_FUND,
+	BookingStatusEnum.IN_REVIEW,
+]
 
 const cols = reactive([
   { key: 'checkbox' },
@@ -88,9 +110,9 @@ const cols = reactive([
   ] : []),
   { key: 'fiscal_code' },
   { key: 'nominative' },
-  { key: 'type' },
+  { key: 'type', enableFilter: true, filterOptions: bookingTypes.map(type => ({ label: i18n.global.t(`bookings.types.${type}`), value: type })) },
   { key: 'created_at'},
-  { key: 'status' },
+  { key: 'status', enableFilter: true, filterOptions: bookingStatuses.map(status => ({ label: i18n.global.t(`bookings.status.${status}`), value: status })) },
   { label: '', key: '', actions:
     [
       { icon: 'mdi-pencil', handler(row) { show(row) }, btnProps: { class: 'mr-3' }, show: (row) => row.status !=  BookingStatusEnum.PRESENTED_TO_THE_FUND },
