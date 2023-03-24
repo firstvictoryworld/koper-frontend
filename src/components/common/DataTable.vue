@@ -31,13 +31,16 @@
     <v-spacer/>
     
     <v-card-text>
-      <v-table>
+      <v-table id="v-table">
 
         <thead>
           <tr>
-            <th v-for="(col) of cols" :key="`th-${col.key}`" :class="col.class" v-bind="col.colProps">
-              {{ col.label !== undefined ? col.label : $t(`${localPrefix}${col.key}`) }}
-            </th>
+            <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterToggle="onFilterToggle" @filterApply="onFilterApply">
+				<template v-if="col.enableSelectAll" #col-checkbox>
+					<v-checkbox  hide-details="auto" color="koperniko-secondary"
+						variant="outlined"  density="compact" v-model="selectAll"/>
+				</template>
+			</DataTableHead>
           </tr>
         </thead>
 
@@ -82,10 +85,12 @@
 
 <script setup lang="ts">
 import type { DatatableRowInterface, DatatableColInterface, DatatableStampInterface } from '@/@types'
+import type { DatatableFilter } from '@/@types/dataTable'
+import DataTableHead from '@/components/common/DataTableHead.vue'
 import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
 import { debounce } from 'lodash'
-import { computed, inject, onBeforeUnmount, onMounted, reactive, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 
 interface Props {
   title?: string
@@ -116,11 +121,14 @@ const table = reactive({
   lastPage: 1,
   rows: [] as DatatableRowInterface[],
   search: '',
+  filters: [] as DatatableFilter[],
   totalCost: 0,
   stamp: [] as DatatableStampInterface[],
 })
 
-const emit = defineEmits(['loaded']);
+const emit = defineEmits(['loaded', 'selectAll']);
+
+const selectAll = ref(false)
 
 // VueUse composables
 
@@ -129,11 +137,56 @@ const [isLoading, toggleLoading] = useToggle()
 // Watchers
 const unwatchSearch = watch(() => table.search, debounce(() => { table.page = 1; loadData() }, 600))
 const unwatchPage = watch(() => table.page, () => { loadData() })
+const unwatchSelectAll = watchEffect(() => {
+	emit('selectAll', selectAll.value)
+})
 
 // Computed
 const showPagination = computed(() => props.perPage !== 'infinite')
 
 // Functions
+
+const resetSelectAll = () => {
+	selectAll.value = false
+}
+
+const onFilterApply = (filter: DatatableFilter) => {
+	let index = table.filters.findIndex(_f => _f.key == filter.key);
+	if (index >= 0) {
+		table.filters = [
+			...table.filters.slice(0, index),
+			filter,
+			...table.filters.slice(index+1, table.filters.length)
+		]
+	} else {
+		table.filters = [
+			...table.filters,
+			filter
+		]
+		
+	}
+	loadData()
+}
+
+const onFilterToggle = (open: boolean) => {
+	let vTable = document.getElementById('v-table')
+	if (open) {
+		vTable?.classList.add('v-table_with-filter')
+	} else {
+		vTable?.classList.remove('v-table_with-filter')
+	}
+}
+
+const getFilterQueryParams = () => {
+	let queryParams: any = {}
+	if (table.filters && table.filters.length) {
+		table.filters.forEach((filter) => {
+			queryParams[filter.key] = filter.values;
+		})
+	}
+
+	return queryParams
+}
 
 let controller: undefined | AbortController
 
@@ -157,7 +210,8 @@ const loadData = debounce(async () => {
       per_page: table.perPage,
       order: props.order || '', // TODO make order customizable
       direction: props.direction || '', // TODO make direction customizable
-      ...(props.queryParams || {})
+      ...(props.queryParams || {}),
+	  ...(getFilterQueryParams())
     }
   })
     .then(({ data }) => {
@@ -173,7 +227,7 @@ const loadData = debounce(async () => {
   toggleLoading()
 }, 150)
 
-defineExpose({ loadData })
+defineExpose({ resetSelectAll, loadData })
 
 onMounted(() => {
   loadData()
@@ -182,6 +236,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   unwatchSearch && unwatchSearch()
   unwatchPage && unwatchPage()
+  unwatchSelectAll && unwatchSelectAll()
 })
 
 </script>
