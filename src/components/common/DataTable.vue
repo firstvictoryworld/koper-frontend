@@ -31,11 +31,11 @@
     <v-spacer/>
     
     <v-card-text>
-      <v-table>
+      <v-table id="v-table">
 
         <thead>
           <tr>
-            <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterApply="onFilterApply">
+            <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterToggle="onFilterToggle" @filterApply="onFilterApply">
 				<template v-if="col.enableSelectAll" #col-checkbox>
 					<v-checkbox  hide-details="auto" color="koperniko-secondary"
 						variant="outlined"  density="compact" v-model="selectAll"/>
@@ -166,6 +166,15 @@ const onFilterApply = (filter: DatatableFilter) => {
 		
 	}
 	loadData()
+}
+
+const onFilterToggle = (open: boolean) => {
+	let vTable = document.getElementById('v-table')
+	if (open) {
+		vTable?.classList.add('v-table_with-filter')
+	} else {
+		vTable?.classList.remove('v-table_with-filter')
+	}
 }
 
 const getFilterQueryParams = () => {

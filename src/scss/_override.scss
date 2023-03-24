@@ -72,6 +72,6 @@ input.hide-arrows {
   transition: none;
 }
 
-.v-table > .v-table__wrapper {
-	min-height: 500px;
+.v-table.v-table_with-filter > .v-table__wrapper {
+	min-height: 395px;
 }

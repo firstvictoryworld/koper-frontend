@@ -9,17 +9,21 @@
 				</div>
 			</div>
 			<div v-if="col.enableFilter && openFilter" :style="filterDropStyle">
-				<v-card class="mx-auto" width="180" variant="elevated" :style="filterCardStyle">
-					<v-card-item>
+				<v-card class="mx-auto" variant="elevated" :style="filterCardStyle">
+					<v-card-item class="pb-0">
 						<div>
 							<div v-for="option of col.filterOptions">
-								<v-checkbox hide-details="auto" color="indigo-darken-3" density="compact" :label="option.label"
-									:value="option.value" v-model="selectedFilterValues" />
+								<v-checkbox-btn hide-details="auto" color="#9C27B0" density="compact" class="pe-2"
+									:value="option.value" v-model="selectedFilterValues">
+									<template v-slot:label>
+										<span style="font-size: 0.8rem; font-weight: 500;">{{ option.label }}</span>
+									</template>
+								</v-checkbox-btn>
 							</div>
 						</div>
 					</v-card-item>
 
-					<v-card-actions style="padding: 0.625rem 1rem">
+					<v-card-actions style="padding: 0.3rem 1rem;min-height: 0">
 						<v-btn :size="'small'" @click="onClickResetFilter">
 							Reset
 						</v-btn>
@@ -52,6 +56,7 @@ const filterDropStyle = reactive({
 	top: '32px',
 	right: 0,
 	minWidth: '100px',
+	width: 'max-content',
 	zIndex: 99
 })
 const filterCardStyle = reactive({
@@ -63,16 +68,19 @@ const selectedFilterValues = ref([])
 const filterContainerRef = ref(null)
 const openFilter = ref(false)
 
-const emit = defineEmits(['filterApply'])
+const emit = defineEmits(['filterToggle', 'filterApply'])
 
 /// handlers
-const toggleFilter = () => openFilter.value = !openFilter.value;
+const toggleFilter = () => {
+	openFilter.value = !openFilter.value
+	emit('filterToggle', openFilter.value)
+}
 
 const outsideClickHandler = () => {
 	if (openFilter.value) {
-		openFilter.value = !openFilter.value;
+		toggleFilter()
 	}
-};
+}
 
 const onClickApplyFilter = () => {
 	toggleFilter()
