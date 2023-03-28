@@ -10,6 +10,7 @@
       :url="`/bookings/${props.bookingId}/invoices`"
       local-prefix="bookings.edit.invoices."
       @loaded="(data) => table.data = data"
+      :perPage="50"
     >
       <template #subheader>
         <div v-show="!completed" class="px-5">
@@ -188,6 +189,12 @@ const readonlyAction = reactive({
   value: false
 })
 
+// Computed
+const readonlyActions = computed(() => {
+  return props.readonly
+})
+
+
 // Data
 const cols = reactive([
   { key: 'id' },
@@ -199,8 +206,8 @@ const cols = reactive([
   { label: '', key: '', actions:
     [
       { icon: 'mdi-download', handler(row: FileInterface) { download(row) }, btnProps: { loading: isDownloading, class: 'mr-3' }, show: (row) => row.filename  },
-      { icon: 'mdi-upload', handler(row: FileInterface) { show(row) }, color: 'yellow', btnProps: { loading: isDownloading, class: 'mr-3', disabled: readonlyAction.value }, show: (row) => !row.filename },
-      { icon: 'mdi-delete', handler(row: FileInterface) { remove(row) }, color: 'red', btnProps: { loading: isDeleting, disabled: readonlyAction.value } }
+      { icon: 'mdi-upload', handler(row: FileInterface) { show(row) }, color: 'yellow', btnProps: { loading: isDownloading, class: 'mr-3' }, show: (row) => !row.filename },
+      { icon: 'mdi-delete', handler(row: FileInterface) { remove(row) }, color: 'red', btnProps: { loading: isDeleting, disabled: readonlyActions } }
     ]
   },
 ] as DatatableColInterface[])
@@ -226,20 +233,20 @@ const dialog = reactive({
   show: false,
   id: undefined as undefined | number,
   fields: {
-    number: { value: undefined, binds: { rules: [requiredValidation], type: 'text', ...defaultInputBinds } },
-    date: { value: undefined, binds: { rules: [requiredValidation], type: 'date', ...defaultInputBinds } },
-    amount: { value: undefined, binds: { rules: [requiredValidation, currencyValidation], type: 'number', ...defaultInputBinds } },
-    type: { value: undefined, binds: { type: 'select', rules: [requiredValidation], items: invoiceTypeOpt, itemTitle: 'label', itemValue: 'value', ...defaultInputBinds } },
-    same_issuer: { value: undefined, binds: { rules: [requiredValidation], type: 'radio', ...defaultInputBinds }, size: 12, options: sameIssuerOptions },
-    vat_number: { value: undefined, binds: { rules: [requiredValidation, pivaValidation], type: 'text', ...defaultInputBinds }, show: () => isDifferentEmitter.value },
-    fiscal_code: { value: undefined, binds: { rules: [requiredValidation, codFiscaleOrPivaValidation], type: 'text', ...defaultInputBinds }, show: () => isDifferentEmitter.value },
-    issuing_body: { value: undefined, binds: { rules: [requiredValidation], type: 'text', ...defaultInputBinds }, show: () => isDifferentEmitter.value, size: 12 },
-    file: { value: undefined, binds: { rules: [], type: 'file', ...defaultInputBinds }, size: 12 },
+    number: { value: undefined, binds: { rules: [requiredValidation], type: 'text', ...defaultInputBinds }, show: () => !uploadOnly.value },
+    date: { value: undefined, binds: { rules: [requiredValidation], type: 'date', ...defaultInputBinds, max: (new Date().toISOString().split("T")[0]) }, show: () => !uploadOnly.value },
+    amount: { value: undefined, binds: { rules: [requiredValidation, currencyValidation], type: 'number', ...defaultInputBinds }, show: () => !uploadOnly.value },
+    type: { value: undefined, binds: { type: 'select', rules: [requiredValidation], items: invoiceTypeOpt, itemTitle: 'label', itemValue: 'value', ...defaultInputBinds }, show: () => !uploadOnly.value },
+    same_issuer: { value: undefined, binds: { rules: [requiredValidation], type: 'radio', ...defaultInputBinds }, size: 12, options: sameIssuerOptions, show: () => !uploadOnly.value },
+    vat_number: { value: undefined, binds: { rules: [requiredValidation, pivaValidation], type: 'text', ...defaultInputBinds }, show: () => isDifferentEmitter.value && !uploadOnly.value },
+    fiscal_code: { value: undefined, binds: { rules: [requiredValidation, codFiscaleOrPivaValidation], type: 'text', ...defaultInputBinds }, show: () => isDifferentEmitter.value && !uploadOnly.value },
+    issuing_body: { value: undefined, binds: { rules: [requiredValidation], type: 'text', ...defaultInputBinds }, show: () => isDifferentEmitter.value && !uploadOnly.value, size: 12 },
+    file: { value: undefined, binds: { rules: [(value: any) => !uploadOnly.value || requiredValidation(value)], type: 'file', ...defaultInputBinds }, size: 12 },
   } as Record<string, FieldInterface>,
 })
 
 const formDialog = reactive({ 
-  status: true,
+  status: null,
   hasErrors: false
 })
 
@@ -253,15 +260,16 @@ const emit = defineEmits(['status', 'updated']);
 
 // Computed
 const isDifferentEmitter = computed((): boolean => dialog.fields.same_issuer.value == undefined ? false :  !dialog.fields.same_issuer.value)
+const uploadOnly = computed((): boolean => dialog.id !== undefined)
+
 
 const completed = computed(() => {
   var value = (table.data?.rows.length || 0) > 0;
-  (table.data?.rows || []).forEach((row: FileInterface) => {
-    // if ( row.filename === null ) { value = false }
-  })  
-    return value
-  }
-); 
+  // (table.data?.rows || []).forEach((_row: FileInterface) => {
+  //   if ( row.filename === null ) { value = false }
+  // })
+  return value
+}); 
 
 const totAmount = computed(() => {
   return (table.data?.total_cost || 0).toFixed(2)
@@ -285,7 +293,7 @@ const unwatchComplete = watch(
 )
 
 const unwatchReadonly = watch(()  => props.readonly, (readonly) =>{
-  if(readonly){ readonlyAction.value = true}
+  if(readonly){ readonlyActions.v = true}
   else { readonlyAction.value = false }
 })
 
@@ -293,32 +301,22 @@ const unwatchReadonly = watch(()  => props.readonly, (readonly) =>{
 const formDialogEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 const refTable: Ref<null | GlobalComponents['VForm']> = ref(null)
 
-// Watchers
-const unwatchDate = watch(() => dialog.fields.date.value, (date: undefined | any) => {
-  var today = new Date();
-  var todayDate = today.toISOString().substring(0, 10);
- 
-  if (!date || date <= todayDate) { return }
-    dialog.fields.date.value = todayDate
-})
-
 // Functions
-const add = (invoice: FileInterface) => {
+const add = () => {
   dialog.fields.date.value = undefined
   dialog.fields.amount.value = undefined
   dialog.fields.number.value = undefined
   dialog.fields.type.value = undefined
-  // dialog.fields.same_issuer.value = undefined
+  dialog.fields.same_issuer.value = undefined
+  dialog.fields.vat_number.value = undefined
+  dialog.fields.fiscal_code.value = undefined
+  dialog.fields.issuing_body.value = undefined
+  dialog.fields.file.value = undefined
   dialog.id = undefined
   dialog.show = true
 }
 
 const show = (row: any) => {
-  dialog.fields.date.value = row.booking_file_invoice.date
-  dialog.fields.amount.value = row.booking_file_invoice.amount
-  dialog.fields.number.value = row.booking_file_invoice.number
-  dialog.fields.type.value = row.type
-  dialog.fields.same_issuer.value = row.booking_file_invoice.type ? 0 : 1
   dialog.id = row.id
   dialog.show = true
 }
@@ -359,7 +357,6 @@ const remove = async (invoice: FileInterface) => {
   toggleDelete()
 }
 
-
 const handleSubmit = async () => {
   if (!formDialogEl.value || !$axios) { return }
 
@@ -377,9 +374,9 @@ const handleSubmit = async () => {
 
   each(dialog.fields, (field, key) => {
     let { value, binds } = field
-    if (binds.type === 'file' && value?.length) {
-      value = value[0]
-    } 
+    if (binds.type === 'file' && Array.isArray(value)) {
+      value = value[0] ?? null
+    }
 
     Object.assign(data, {[key]: value})
   })
@@ -390,31 +387,22 @@ const handleSubmit = async () => {
     allowEmptyArrays: true
   })
  
-    $axios?.post(path, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+  await $axios?.post(path, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+    .then(() => {
+      reloadTable()
+      emit('updated')
+      dialog.show = false
     })
-      .then(() => {
-        reloadTable()
-        emit('updated')
-        dialog.show = false
-        dialog.fields.file.value = false
-        each(dialog.fields, (field, key) => {
-          if (field.value === undefined) { return }
-            dialog.fields[key].value = null
-        })
-      })
-      .catch(console.error)
-
-  
-    
+    .catch(console.error)
 
   toggleLoading()
 }
 
 const reloadTable = () => {
-  console.log('reload invoice')
   refTable.value?.loadData()
 }
 
@@ -422,8 +410,6 @@ defineExpose({ reloadTable })
 
 onBeforeUnmount(() => {
   unwatchComplete()
-  unwatchDate()
   unwatchReadonly()
-
 })
 </script>

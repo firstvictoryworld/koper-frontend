@@ -71,3 +71,7 @@ input.hide-arrows {
 .v-card > .v-card__loader > div {
   transition: none;
 }
+
+.v-table.v-table_with-filter > .v-table__wrapper {
+	min-height: 395px;
+}

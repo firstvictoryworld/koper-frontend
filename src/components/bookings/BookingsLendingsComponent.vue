@@ -10,6 +10,7 @@
       :url="`/bookings/${props.bookingId}/lendings`"
       local-prefix="bookings.edit.lendings."
       @loaded="(data) => table.data = data"
+      :perPage="50"
     >
       <template #subheader>
         <div v-show="!completed" class="px-5">
@@ -24,6 +25,12 @@
           :disabled="disable.insert">
           {{ $t('add') }}
         </v-btn>
+      </template>
+
+      <template #col-checkbox="{ row }">
+        <v-checkbox v-if="row.lending_agreement?.lendind?.checkbox" hide-details="auto" color="koperniko-secondary"
+          variant="outlined" density="compact" 
+        />
       </template>
 
       <template #col-fund_code="{ row }">
@@ -229,7 +236,13 @@ const teethObbligation = reactive({
   message: ''
 })
 
+// Computed
+const readonlyActions = computed(() => {
+  return props.readonly
+})
+
 const cols = reactive([
+  // { key: 'checkbox' },
   { key: 'fund_code' },
   { key: 'name' },
   { key: 'iva' },
@@ -238,8 +251,8 @@ const cols = reactive([
   {
     label: '', key: '', actions:
       [
-        { icon: 'mdi-pencil', handler(row: BookedLandingRequestInterface) { show(row) }, btnProps: { class: 'mr-3', disabled: readonlyAction.value} },
-        { icon: 'mdi-delete', handler(row: BookedLandingRequestInterface) { remove(row) }, color: 'red', btnProps: { disabled: readonlyAction.value} }
+        { icon: 'mdi-pencil', handler(row: BookedLandingRequestInterface) { show(row) }, btnProps: { class: 'mr-3', disabled: readonlyActions} },
+        { icon: 'mdi-delete', handler(row: BookedLandingRequestInterface) { remove(row) }, color: 'red', btnProps: { disabled: readonlyActions} }
       ]
   },
 ] as DatatableColInterface[])
@@ -292,6 +305,7 @@ const disable = reactive({
 // Computed
 const completed = computed(() => (table.data?.rows.length || 0) > 0)
 
+
 const totAmount = computed(() => {
   return (table.data?.total_cost || 0).toFixed(2)
 })
@@ -338,6 +352,7 @@ const unwatchDoctor = watch(() => dialog.doctors.selected, (doctor: undefined | 
 })
 
 const unwatchReadonly = watch(()  => props.readonly, (readonly) =>{
+  console.log('readonly');
   if(readonly){ readonlyAction.value = true}
   else { readonlyAction.value = false }
 })
@@ -477,5 +492,6 @@ onBeforeUnmount(() => {
   unwatchReadonly()
   
 })
+
 
 </script>

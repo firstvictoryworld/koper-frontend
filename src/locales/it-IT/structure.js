@@ -9,7 +9,8 @@ export default {
       business_name: 'Ragione sociale',
       fiscal_code: 'Cod. Fiscale',
       vat_number: 'P. IVA',
-      city: 'Città'
+      city: 'Città',
+      closed: 'Chiusa'
     },
     edit: {
       title: 'Dati struttura',

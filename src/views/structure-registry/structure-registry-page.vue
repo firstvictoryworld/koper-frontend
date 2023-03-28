@@ -29,10 +29,10 @@
         center-active
         show-arrows
       >
-        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="structure">{{ $t('registry.tabs.structure') }}</v-tab>
-        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="users">{{ $t('registry.tabs.users') }}</v-tab>
-        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="bank">{{ $t('registry.tabs.bankAccount') }}</v-tab>
-        <v-tab v-if="( usersStore.isStruttura && usersStore.structureCompleted ) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && usersStore.structureCompleted )" value="contacts">{{ $t('registry.tabs.contacts') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && (usersStore.structureCompleted || usersStore.structureClosed)) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && (usersStore.structureCompleted || usersStore.structureClosed))" value="structure">{{ $t('registry.tabs.structure') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && (usersStore.structureCompleted || usersStore.structureClosed)) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && (usersStore.structureCompleted || usersStore.structureClosed))" value="users">{{ $t('registry.tabs.users') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && (usersStore.structureCompleted || usersStore.structureClosed)) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && (usersStore.structureCompleted || usersStore.structureClosed))" value="bank">{{ $t('registry.tabs.bankAccount') }}</v-tab>
+        <v-tab v-if="( usersStore.isStruttura && (usersStore.structureCompleted || usersStore.structureClosed)) || ( usersStore.userDetails.accesses.includes(UserAccesses.REGISTRY) && (usersStore.structureCompleted || usersStore.structureClosed))" value="contacts">{{ $t('registry.tabs.contacts') }}</v-tab>
       </v-tabs>
 
       <v-card-text>
@@ -43,7 +43,7 @@
           </v-window-item>
 
           <v-window-item v-if="usersStore.isStruttura || usersStore.isUtente" value="users">
-            <StructureUsers />
+            <StructureUsers :structure-id="usersStore.userDetails.structureId" :readonly="!usersStore.structureCompleted"/>
           </v-window-item>
 
           <v-window-item v-if="usersStore.isStruttura || usersStore.isUtente" value="bank">

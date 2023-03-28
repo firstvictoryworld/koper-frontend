@@ -29,25 +29,12 @@
     </v-alert>
   </template>
 
-  <template v-for="(lending, i) in lendings.list" :key="`lending-cat-${i}`">
-    <LendingComponent
-      :indexes="[i]"
-      :agreement-id="agreementData.id"
-      :readonly="readonly"
-      v-bind:data="lendings.list[i]"
-      @updated:deedOfAgreementId="data => updatedDeedOfAgreementId(data)"
-    />
-  </template>
-
   <CardContainer
     v-if="agreementData.id && agreementData.status === AgreementStatusEnum.CONSOLIDATED && usersStore.isStruttura"
-    class="mt-5"
+    class="mt-3"
     :title="$t('agreements.contract.title')"
   >
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur nec rutrum ligula, quis luctus mauris. Maecenas varius pharetra condimentum. Suspendisse dolor magna, cursus a ipsum eget, feugiat sodales nunc. Suspendisse iaculis non elit sed iaculis. Suspendisse dui enim, ullamcorper quis lacinia non, tempus eget urna. Aliquam tristique urna eu dui accumsan, id malesuada nisl mattis. Donec ante augue, facilisis ac eleifend at, imperdiet bibendum nulla.
-    
-    <v-divider />
-
+    {{ $t('agreements.contract.subtitle') }}
     <v-checkbox
       :label="$t('agreements.contract.checkbox')"
       hide-details="auto"
@@ -63,6 +50,17 @@
       {{ $t('confirm') }}
     </v-btn>
   </CardContainer>
+
+  <template v-for="(lending, i) in lendings.list" :key="`lending-cat-${i}`">
+    <LendingComponent
+      :indexes="[i]"
+      :agreement-id="agreementData.id"
+      :readonly="readonly"
+      v-bind:data="lendings.list[i]"
+      @updated:deedOfAgreementId="data => updatedDeedOfAgreementId(data)"
+    />
+  </template>
+
 </template>
 
 <script setup lang="ts">

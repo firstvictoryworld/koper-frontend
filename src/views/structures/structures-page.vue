@@ -11,6 +11,7 @@
         <v-icon v-else-if="StructureStatusEnum.NOT_COMPLETED === row.status" color="grey">mdi-check</v-icon>
         <v-icon v-else-if="StructureStatusEnum.NOT_APPROVED === row.status" color="yellow-darken-3">mdi-new-box</v-icon>
         <v-icon v-else-if="StructureStatusEnum.REJECTED === row.status" color="red">mdi-cancel</v-icon>
+        <v-icon v-else-if="StructureStatusEnum.CLOSED === row.status" color="red">mdi-minus-circle</v-icon>
       </template>
     </DataTable>
   </v-container>

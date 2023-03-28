@@ -21,4 +21,5 @@ export interface UserData {
   structurePostalCode: string | null
   structureProvince: string | null
   structureCompanies: array| null
+  deletedAt: date | null
 }

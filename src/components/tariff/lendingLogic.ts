@@ -66,7 +66,8 @@ export const addLending = (lendingsList: LendingListInterface, indexes: number[]
     refund_value: undefined,
     deleted_at: null,
     is_category: asCategory,
-    editing: true
+    editing: true,
+    percentage: 0,
   } as LendingInterface)
 }
 

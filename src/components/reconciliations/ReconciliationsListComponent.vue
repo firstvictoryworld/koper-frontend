@@ -16,6 +16,18 @@
     <template #col-structure="{ row }">
       {{ row.structure_data?.business_name }}
     </template>
+   
+    <template #col-payment_date="{ row }">
+      {{ $filters.formatIsoDate(row.payment_date) }}
+    </template>
+   
+    <template #col-value_date="{ row }">
+      {{ $filters.formatIsoDate(row.value_date) }}
+    </template>
+   
+    <template #col-payment_value="{ row }">
+      {{ $filters.formatCurrency(row.payment_value) }}
+    </template>
 
     <template #col-bookings="{ row }">
       {{ row.liquidations.length}}
@@ -34,8 +46,8 @@
       <thead>
         <tr>
           <th>{{ $t(`reconciliations.details.fund_booking_id`) }}</th>
-          <th>{{ $t(`reconciliations.details.fund_code_associate`) }}</th>
-          <th>{{ $t(`reconciliations.details.fund_code_patient`) }}</th>
+          <th>{{ $t(`reconciliations.details.patient_name`) }}</th>
+          <th>{{ $t(`reconciliations.details.patient_fiscal_code`) }}</th>
           <th>{{ $t(`reconciliations.details.payment_date`) }}</th>
           <th style="text-align: right;">{{ $t(`reconciliations.details.payment_value`) }}</th>
           <th style="width:10px"></th>
@@ -47,10 +59,10 @@
           :key="i"
         >
           <td>{{ liquidation.fund_booking_id }}</td>
-          <td>{{ liquidation.fund_code_associate }}</td>
-          <td>{{ liquidation.fund_code_patient }}</td>
-          <td>{{ liquidation.payment_date }}</td>
-          <td style="text-align: right;">{{ liquidation.payment_value }}</td>
+          <td>{{ liquidation.patient_surname }} {{ liquidation.patient_name }}</td>
+          <td>{{ liquidation.patient_fiscal_code }}</td>
+          <td>{{ $filters.formatIsoDate(liquidation.payment_date) }}</td>
+          <td style="text-align: right;">{{ $filters.formatCurrency(liquidation.payment_value) }}</td>
           <td class="text-no-wrap">
             <v-btn
               :title="$t('reconciliations.details.download.report')"

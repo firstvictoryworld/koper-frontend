@@ -15,7 +15,7 @@
     :readonly="readonly"
     v-bind:data="lendings.list[i]"
   />
-
+<!-- Il Fondo ha deciso che le modifiche del tariffario veranno direttamente da Keplero
   <v-btn
     v-if="!readonly"
     variant="flat"
@@ -24,7 +24,7 @@
     v-t="'lending.addGroupLending'"
     @click="() => add()"
   />
-
+-->
   <v-overlay v-bind:model-value="isLoading" :persistent="true" contained></v-overlay>
 </template>
 
@@ -51,10 +51,10 @@ const [isLoading, toggleLoading] = useToggle()
 const loadData = async () => {
   toggleLoading()
 
-  await $axios?.get('/lendings', {
-    params: {
-      parent_id: 'root'
-    }
+  await $axios?.get('/agreements/tariff', {
+    // params: {
+    //   parent_id: 'root'
+    // }
   })
     .then(({ data }) => {
       lendings.list = setupList(data.lendings)

@@ -1,6 +1,6 @@
 import UserTypes from "@/enums/UserTypesEnum";
 import UserAccesses from "@/enums/UserAccessesEnum";
-console.log(import.meta.env.VITE_APP_ENV)
+
 export const mainMenu = [
   {
     title: 'mainMenu.home',

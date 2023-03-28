@@ -47,7 +47,7 @@
               v-if="item.allowedTypes?.includes(usersStore?.userDetails?.type || 0) || usersStore?.userDetails?.accesses?.includes(item.allowedAccesses)"
               :active="route.fullPath === item.to"
               :key="i"
-              :disabled="!item.alwaysActive && (item.disabled === true || !usersStore?.structureCompleted || false)"
+              :disabled="!item.alwaysActive && (item.disabled === true || (!usersStore?.structureCompleted && !usersStore?.structureClosed) || false)"
               :to="item.to"
               rounded="lg"
               class="mb-1"

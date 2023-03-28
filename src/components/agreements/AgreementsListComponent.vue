@@ -1,11 +1,14 @@
 <template>
   <DataTable ref="refTable" :cols="cols" url="/agreements" local-prefix="agreements.list." class="mt-5">
     <template #header>
-      <v-btn v-if="!readonly" class="ml-3" variant="flat" color="koperniko-primary" @click="() => agreement.id = null">
+      <v-btn v-if="!readonly" :disabled="disable" class="ml-3" variant="flat" color="koperniko-primary" @click="() => agreement.id = null">
         {{ $t('add') }} 
       </v-btn>
-      <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading=isDownloading   >
+      <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloading" :disabled="disable" >
         {{ $t('download') }} 
+      </v-btn>
+      <v-btn  v-if="usersStore.structureCompleted || usersStore.isBackoffice"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
+        {{ $t('upload') }} 
       </v-btn>
     </template>
 
@@ -13,6 +16,10 @@
       <v-checkbox  hide-details="auto" color="koperniko-secondary"
         variant="outlined"  density="compact" :value="row.id" v-model="ids"   
        />
+    </template>
+
+    <template #col-code="{ row }">
+      {{ row.structure_data?.code }}
     </template>
 
     <template #col-structure="{ row }">
@@ -44,6 +51,15 @@
 
     <AgreementsEditComponent v-if="agreement.id !== undefined" :agreement-id="agreement.id" @updated="() => reload()" />
   </FullDialog>
+
+  <FullDialog
+    :show="uploadFile.value === true"
+    @close="() => uploadFile.value = false"
+  >
+    <template #title>{{ $t('agreements.import.title') }}</template>
+      
+    <AgreementsImportComponent v-if="uploadFile.value === true" @updated="() => reload()" />
+  </FullDialog>
 </template>
 
 <script setup lang="ts">
@@ -57,12 +73,13 @@ import DataTable from '../common/DataTable.vue'
 import FullDialog from '../common/FullDialog.vue'
 import JsFileDownloader from 'js-file-downloader'
 import AgreementsEditComponent from './AgreementsEditComponent.vue'
+import AgreementsImportComponent from  './AgreementsImportComponent.vue'
 
 const usersStore = useUsersStore()
 
 const cols = reactive([
   { key: 'checkbox' },
-  { key: 'id' },
+  { key: 'code' },
   { key: 'structure', },
   { key: 'lending_agreements_count', },
   { key: 'valid_from', },
@@ -71,13 +88,18 @@ const cols = reactive([
   { key: 'status', },
   { label: '', key: '', actions:
     [
-      { icon: 'mdi-pencil', handler(row) { show(row) } }
+      { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status) },
+      { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status) }
     ]
   },
 ] as DatatableColInterface[])
 
 const agreement = reactive({
   id: undefined as undefined|null|number
+})
+
+const uploadFile = reactive({
+  value: undefined as undefined|null|boolean
 })
 
 const $axios = inject(axiosInjectKey)
@@ -87,7 +109,11 @@ const [isDownloading, toggleDownload] = useToggle()
 
 // Computed
 const readonly = computed(() => {
-  return !usersStore.isStruttura
+  return !usersStore.isStructureOrUser || !usersStore.structureCompleted 
+})
+// temporaneo
+const disable = computed(() => {
+  return import.meta.env.VITE_APP_ENV !== 'staging'
 })
 
 // Elements

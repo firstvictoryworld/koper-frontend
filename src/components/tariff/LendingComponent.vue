@@ -4,10 +4,12 @@
 
   <!-- Leaf lending -->
   <v-form v-else-if="isHeader || !data.is_category" ref="formEl" lazy-validation v-model="form.status" class="d-block w-100" @submit.prevent="store">        
-    <v-row dense class="w-100 px-2 flex-nowrap" :class="{
+   
+   <v-row dense class="w-100 px-2 flex-nowrap" :class="{
       'py-2': !isHeader,
       'row-odd': !isHeader && indexes[indexes.length - 1] % 2 !== 0
     }">
+    
       <v-col v-if="!isHeader && agreementMode && usersStore.isStruttura" cols="auto">
         <v-checkbox
           hide-details="auto"
@@ -24,6 +26,7 @@
       </v-col>
 
       <template v-for="(field, i) in fields">    
+    
         <v-col
           v-if="(isHeader && ['name'].includes(field.key)) || (!isHeader && fieldKeys.includes(field.key))"
           :key="`${indexes.join('-')}-${field.key}-${i}`"
@@ -32,17 +35,27 @@
         >
           <template v-if="readonlyField || !activeFieldKeys.includes(field.key)">
             <div class="d-block lending-label text-caption">{{ field.label }}</div>
-            <div v-if="field.key !== 'lending_cost' && field.key !== 'structure_cost'" class="d-block lending-value">{{
+          
+            <div v-if="field.key !== 'refund_value' &&  field.key !== 'lending_cost' && field.key !== 'structure_cost'"  class="d-block lending-value">{{
                 (field.key !== 'type')
                 ? (props.data[field.key as keyof LendingInterface] || '-') 
                 : (locales.types[props.data[field.key as keyof LendingInterface] as any] || '-')
             }}</div>
-             <div v-else-if="field.key === 'lending_cost' || field.key === 'structure_cost'" class="d-block lending-value">{{
-              (props.data?.lending_agreements?.length )
-                ? props.data?.lending_agreements[0].agreeded_cost :  '-'
-
+             <div v-else-if="field.key === 'refund_value'" class="d-block lending-value">{{
+                (props.data.percentage > 0 )
+                ? (props.data.percentage) + "%"
+                : (props.data[field.key as keyof LendingInterface] || '-') 
             }}</div>
-           
+      
+            <div v-else-if="(field.key === 'lending_cost' || field.key === 'structure_cost')" class="d-block lending-value">{{
+                 
+                  ( props.data?.lending_agreements?.length )
+                ? ( props.data?.lending_agreements[0].agreeded_cost || props.data[field.key as keyof LendingInterface] ) 
+                : ( '-') 
+                 
+            }}</div>
+          
+ 
           </template>
 
           <v-select
@@ -77,25 +90,27 @@
       </template>
 
       <v-col cols="auto" align-self="center" class="pl-3">
-        <v-btn v-if="canEdit" variant="plain" icon color="koperniko-primary" density="comfortable" :disabled="isLoading" @click="() => modify()">
+      <!--
+        <v-btn v-if="!isHeader && canEdit" variant="plain" icon color="koperniko-primary" density="comfortable" :disabled="isLoading" @click="() => modify()">
           <v-icon color="koperniko-primary">mdi-pencil</v-icon>
         </v-btn>
-
-        <v-btn v-if="canSave" variant="plain" icon color="koperniko-primary" density="comfortable" :disabled="agreementMode && !props.data.selected" :loading="isLoading" type="submit">
+      -->
+        <v-btn v-if="!isHeader && canSave" variant="plain" icon color="koperniko-primary" density="comfortable" :disabled="agreementMode && !props.data.selected" :loading="isLoading" type="submit">
           <v-icon color="koperniko-primary">mdi-content-save</v-icon>
         </v-btn>
-
-        <v-btn v-if="canDelete" variant="plain" icon color="red" density="comfortable" :disabled="agreementMode && !props.data.selected" :loading="isLoading" @click="() => remove()">
+      <!--
+        <v-btn v-if="!isHeader && canDelete " variant="plain" icon color="red" density="comfortable" :disabled="agreementMode && !props.data.selected" :loading="isLoading" @click="() => remove()">
           <v-icon color="red">mdi-delete</v-icon>
         </v-btn>
 
-        <v-btn v-if="canRestore" variant="plain" icon color="secondary" density="comfortable" :disabled="isLoading" @click="() => restore()">
+        <v-btn v-if="!isHeader && canRestore" variant="plain" icon color="secondary" density="comfortable" :disabled="isLoading" @click="() => restore()">
           <v-icon color="secondary">mdi-restore</v-icon>
         </v-btn>
 
         <v-btn v-if="!isHeader && !agreementMode" variant="plain" icon color="koperniko-secondary" density="comfortable" :disabled="!data.id" @click="() => showDocuments()">
           <v-icon color="secondary">mdi-file-document-multiple</v-icon>
         </v-btn>
+      -->
       </v-col>
     </v-row>
   </v-form>
@@ -135,7 +150,7 @@
         @updated:deedOfAgreementId="data => emit('updated:deedOfAgreementId', data)"
       />
     </template>
-
+<!-- Il Fondo ha deciso che non verranno inserite categorie o lendings da Koperniko
     <div v-if="canAddCategory || canAddLending" class="d-flex justify-center align-center" :class="{ 'mt-5': hasChildren }">
       <v-btn
         v-if="canAddCategory"
@@ -157,6 +172,7 @@
         {{ props.locales.addLending }}
       </v-btn>
     </div>
+  -->
   </CardContainer>
 
   <LendingDocumentsComponent v-if="data.id" :lending-id="data.id" v-model:show="documents.show" />
@@ -190,6 +206,7 @@ export interface LendingInterface {
   prevention: number
   serious_illness: number
   refund_value?: number
+  percentage: number
   lending_cost?: number
   agreeded_cost?: number
   structure_cost?: number
@@ -253,6 +270,7 @@ const props = withDefaults(defineProps<Props>(), {
       structure_cost: i18n.t('lending.structure_cost'),
       addCategoryLending: i18n.t('lending.addCategoryLending'),
       addLending: i18n.t('lending.addLending'),
+      percentage: i18n.t('lending.refund_value'),
     }
   }
 })
@@ -261,48 +279,13 @@ const lendingsList = getLendingsListObject()
 const usersStore = useUsersStore()
 const $axios = inject(axiosInjectKey)
 
-const fields: UnwrapNestedRefs<{ key: FieldKeys, label: string; rules: ValidationRule[], type: string, width?: number }[]> = reactive([
-  // { key: 'code', label: props.locales.code, rules: [requiredValidation], type: 'text', width: 100 },   
-  { key: 'fund_code', label: props.locales.fund_code, rules: [requiredValidation], type: 'text', width: 100 },
-  { key: 'name', label: props.locales.name, rules: [requiredValidation], type: 'text' },
-  { key: 'type', label: props.locales.type, rules: [requiredValidation], type: 'select' },
-  { key: 'refund_value', label: props.locales.refund_value, rules: [requiredValidation, currencyValidation], type: 'number', width: 200 },
-  { key: 'lending_cost', label: props.locales.lending_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
-  { key: 'agreeded_cost', label: props.locales.agreeded_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
-  { key: 'structure_cost', label: props.locales.structure_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
-])
-
-const local = reactive({
-  backup: null as null | Record<FieldKeys, any>,
-  fields: {
-    code: props.data.code || '',
-    fund_code: props.data.fund_code || '',
-    name: props.data.name || '',
-    type: props.data.type as undefined | number,
-    refund_value: props.data.refund_value as undefined | number,
-    lending_cost: props.data.lending_cost as undefined | number,
-    agreeded_cost: props.data.lending_agreements as undefined | number,
-    structure_cost: props.data.structure_cost as undefined | number,
-  } as Record<FieldKeys, any>,
-})
-
-const lendingTypes = reactive([
-  { value: 'inpatient', label: props.locales.types.inpatient },
-  { value: 'outpatient', label: props.locales.types.outpatient },
-  { value: 'dentistry', label: props.locales.types.dentistry },
-  { value: 'prevention', label: props.locales.types.prevention },
-  { value: 'serious_illness', label: props.locales.types.serious_illness },
-])
-
-const form = reactive({ status: true, hasErrors: false })
-
-const documents = reactive({ show: false })
-
-// Togglers
-const [isLoading, toggleLoading] = useToggle(false)
-
-// Events
-const emit = defineEmits(['updated:deedOfAgreementId']);
+const agreeable = computed(() => 
+  !props.readonly &&
+  // !!props.data.code &&
+  !!props.data.fund_code &&
+  !!props.data.name &&
+  !!props.data.refund_value
+)
 
 // Computed
 
@@ -313,6 +296,10 @@ const level = computed(() => props.indexes.length - 1)
 
 const hasChildren = computed(() => {
   return find(props.data.children || [], { deleted_at: null } as Partial<LendingInterface>) !== undefined
+})
+
+const hasLendingsAgreement= computed(() => {
+  return find(props.data.lending_agreements || [], { deleted_at: null } as Partial<LendingInterface>) !== undefined
 })
 
 const canAddCategory = computed(() => {
@@ -326,8 +313,8 @@ const canAddLending = computed(() => {
 })
 
 const fieldKeys = computed(() => agreementMode.value === true
-  ? ['code','fund_code', 'name', 'type', 'refund_value', 'lending_cost', 'structure_cost']
-  : ['code', 'fund_code', 'name', 'type', 'refund_value', 'lending_cost']
+  ? ['code','fund_code', 'name', 'type', 'refund_value', 'lending_cost', 'structure_cost', 'percentage']
+  : ['code', 'fund_code', 'name', 'type', 'refund_value', 'percentage' , (!usersStore.isStructureOrUser)  ? `` : 'lending_cost']
 )
 
 const activeFieldKeys = computed(() => agreementMode.value === true
@@ -361,13 +348,53 @@ const readonlyField = computed(() =>
   props.readonly || (agreementMode.value && !props.data.selected) || (!agreementMode.value && !props.data.editing)
 )
 
-const agreeable = computed(() => 
-  !props.readonly &&
-  // !!props.data.code &&
-  !!props.data.fund_code &&
-  !!props.data.name &&
-  !!props.data.refund_value
-)
+
+const fields: UnwrapNestedRefs<{ key: FieldKeys, label: string; rules: ValidationRule[], type: string, width?: number }[]> = reactive([
+  // { key: 'code', label: props.locales.code, rules: [requiredValidation], type: 'text', width: 100 },   
+  { key: 'fund_code', label: props.locales.fund_code, rules: [requiredValidation], type: 'text', width: 100 },
+  { key: 'name', label: props.locales.name, rules: [requiredValidation], type: 'text' },
+  // { key: 'type', label: props.locales.type, rules: [requiredValidation], type: 'select' },
+  { key: 'refund_value', label: props.locales.refund_value, rules: [requiredValidation, currencyValidation], type: 'number', width: 200 },
+ 
+  { key: 'lending_cost', label: props.locales.lending_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
+  // { key: 'agreeded_cost', label: props.locales.agreeded_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
+ 
+  { key: 'structure_cost', label: props.locales.structure_cost, rules: [requiredValidation, currencyValidation], type: 'number', width: 130 },
+])
+
+const local = reactive({
+  backup: null as null | Record<FieldKeys, any>,
+  fields: {
+    code: props.data.code || '',
+    fund_code: props.data.fund_code || '',
+    name: props.data.name || '',
+    // type: props.data.type as undefined | number,
+    refund_value: props.data.refund_value as undefined | number,
+    lending_cost: props.data.lending_cost as undefined | number,
+    // agreeded_cost: props.data.lending_agreements as undefined | number,
+    percentage: props.data.percentage as number || 0,
+    structure_cost: props.data.structure_cost as undefined | number,
+  } as Record<FieldKeys, any>,
+})
+
+const lendingTypes = reactive([
+  { value: 'inpatient', label: props.locales.types.inpatient },
+  { value: 'outpatient', label: props.locales.types.outpatient },
+  { value: 'dentistry', label: props.locales.types.dentistry },
+  { value: 'prevention', label: props.locales.types.prevention },
+  { value: 'serious_illness', label: props.locales.types.serious_illness },
+])
+
+const form = reactive({ status: true, hasErrors: false })
+
+const documents = reactive({ show: false })
+
+// Togglers
+const [isLoading, toggleLoading] = useToggle(false)
+
+// Events
+const emit = defineEmits(['updated:deedOfAgreementId']);
+
 
 // Elements
 const formEl: Ref<null | GlobalComponents['VForm']> = ref(null)

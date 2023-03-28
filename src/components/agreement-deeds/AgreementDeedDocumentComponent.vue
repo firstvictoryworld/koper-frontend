@@ -355,8 +355,8 @@
     <p class="mt-3">Adesione al CONVENZIONAMENTO FASCHIM: SI’</p>
 
 
-    <p class="mt-3">Data di validazione: {{date.valid_from ?? '2023-03-01'}}</p>
-    <p class="mt-3">Data di Emissione: {{ date.subscribed_at ?? '2023-03-01'}}</p>
+    <p class="mt-3">Data di validazione: {{date.valid_from }}</p>
+    <p class="mt-3">Data di Emissione: {{ date.subscribed_at }}</p>
     <p class="mt-3">il Direttore FASCHIM Claudio Giammatteo </p>
 
 
@@ -390,7 +390,7 @@ const $axios = inject(axiosInjectKey)
 const [isDownloading, toggleDownload] = useToggle()
 
 const contract = reactive({
-  accepted: 1,
+  accepted: 0,
   disabled: true,
   
 })
@@ -428,7 +428,7 @@ const confirmation = async () => {
       agreement.id = data.agreement.id
       date.valid_from = valid_from
       date.subscribed_at = subscribed_at
-      if (updated_at != null && subscribed_at != null) { contract.disabled = true }
+      if (subscribed_at != null) {  contract.accepted = 1; contract.disabled = true }
     })
     .catch(console.error)
 

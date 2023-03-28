@@ -30,5 +30,6 @@ export default {
     doctor: 'Medico',
     specializations: 'Specializzazione',
     categories: 'Cerca la sezione del tariffario',
-  }
+  },
+  apply: 'Applica'
 }

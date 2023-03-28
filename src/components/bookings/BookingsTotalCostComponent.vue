@@ -11,6 +11,7 @@
       local-prefix="bookings.edit.summary_cost."
       :noSearchable="true"
       @loaded="(data) => component.data = data"
+      :perPage="50"
     >
       <template #col-fund_code="{ row }">
         {{ row.lending_agreement?.lending?.fund_code }}

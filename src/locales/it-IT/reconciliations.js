@@ -18,8 +18,8 @@ export default {
       payment_date: "Data pagamento",
       payment_value: "Importo (€)",
       status: "Stato prenotazione fondo",
-      fund_code_patient: 'Cod. beneficiario',
-      fund_code_associate: 'Cod. associato',
+      patient_name: 'Nome beneficiario',
+      patient_fiscal_code: 'Cod. Fiscale beneficiario',
       download: {
         report: 'Scarica la lettera di liquidazione',
         invoices: 'Scarica le fatture'

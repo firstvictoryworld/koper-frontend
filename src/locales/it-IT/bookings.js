@@ -90,12 +90,14 @@ export default {
           0: 'Altro',
           1: 'Radiografia',
           2: 'ECG',
-        }
+        },
+        noDescription: 'Non sono presenti ulteriori informazioni'
       },
       lendings: {
         title: 'Prestazioni',
         edit: 'Modifica prestazione',
         // id: '#',
+        checkbox: 'Primaria',
         fund_code: 'Codice',
         name: 'Prestazione',
         current_price: 'Costo €',

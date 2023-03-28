@@ -1,8 +1,8 @@
 
 <template>
-  <DataTable ref="refTable" :cols="cols" url="/bookings" local-prefix="bookings.list." class="mt-5">
+  <DataTable ref="refTable" :cols="cols" url="/bookings" local-prefix="bookings.list." class="mt-5" @loaded="onLoaded" @selectAll="onSelectAll" :perPage="30">
     <template #header>
-      <v-btn v-if="userStore.isStruttura || userStore.isUtente" class="ml-3" variant="flat" color="koperniko-primary" @click="() => booking.id = null">
+      <v-btn v-if="userStore.isStructureOrUser && userStore.structureCompleted" class="ml-3" variant="flat" color="koperniko-primary" @click="() => booking.id = null">
         {{ $t('add') }} 
       </v-btn>
       <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading=isDownloading   >
@@ -72,6 +72,9 @@ import { useToggle } from '@vueuse/shared'
 import { axiosInjectKey } from '@/utils/axios';
 import JsFileDownloader from 'js-file-downloader'
 import useBooking from '@/use/useBooking'
+import BookingTypeEnum from '@/enums/BookingTypeEnum'
+import i18n from '@/locales'
+import type { DatatableFilter, DatatableRowInterface } from '@/@types/dataTable'
 
 const userStore = useUsersStore()
 
@@ -79,8 +82,28 @@ const [isDownloading, toggleDownload] = useToggle()
 
 const $axios = inject(axiosInjectKey)
 
+const bookingTypes = [
+	BookingTypeEnum.AMBULATORIO,
+	BookingTypeEnum.RICOVERO,
+	BookingTypeEnum.ODONTOIATRICA,
+	BookingTypeEnum.PREVENZIONE,
+	BookingTypeEnum.GRAVI_MALATTIE
+]
+
+const bookingStatuses = [
+	BookingStatusEnum.DRAFT,
+	BookingStatusEnum.APPROVED,
+	BookingStatusEnum.BLOCKED,
+	BookingStatusEnum.REJECTED,
+	BookingStatusEnum.INTEGRATED,
+	BookingStatusEnum.CONCLUDED,
+	BookingStatusEnum.SUSPENDED,
+	BookingStatusEnum.PRESENTED_TO_THE_FUND,
+	BookingStatusEnum.IN_REVIEW,
+]
+
 const cols = reactive([
-  { key: 'checkbox' },
+  { key: 'checkbox', enableSelectAll: true },
   { key: 'id' },
   ...(userStore.isAdmin ? [
     { key: 'structure' },
@@ -88,9 +111,9 @@ const cols = reactive([
   ] : []),
   { key: 'fiscal_code' },
   { key: 'nominative' },
-  { key: 'type' },
+  { key: 'type', enableFilter: true, filterOptions: bookingTypes.map(type => ({ label: i18n.global.t(`bookings.types.${type}`), value: type })) },
   { key: 'created_at'},
-  { key: 'status' },
+  { key: 'status', enableFilter: true, filterOptions: bookingStatuses.map(status => ({ label: i18n.global.t(`bookings.status.${status}`), value: status })) },
   { label: '', key: '', actions:
     [
       { icon: 'mdi-pencil', handler(row) { show(row) }, btnProps: { class: 'mr-3' }, show: (row) => row.status !=  BookingStatusEnum.PRESENTED_TO_THE_FUND },
@@ -116,13 +139,38 @@ const readonly = reactive({
 
 // Elements
 const refTable: Ref<null | DatatableComponent> = ref(null)
-const ids = ref([])
+const ids = ref([] as any[])
+const allSelect = ref(false)
+const loadedData = ref({
+	search: '',
+	filters: [] as DatatableFilter[],
+	rows: [] as DatatableRowInterface[]
+});
 
 // Functions
 
+const onLoaded = (data: any) => {
+	loadedData.value = data
+	resetSelection()
+}
+
+const onSelectAll = (selected: boolean) => {
+	allSelect.value = !!selected
+
+	if (!!selected) {
+		selectAllRows()
+	} else {
+		ids.value = []
+	}
+}
+
+const selectAllRows = () => {
+	ids.value = loadedData.value?.rows ? loadedData.value.rows.map(row => row.id) : []
+}
+
 const show = (row: Record<string, any>) => {
   booking.id = row.id || null
-  readonly.value =  userStore.isFondo ? false : row.status === BookingStatusEnum.PRESENTED_TO_THE_FUND
+  readonly.value =  userStore.isFondo ? false : row.status === BookingStatusEnum.PRESENTED_TO_THE_FUND || !userStore.structureCompleted
   structureData.id = row.structure_data.id || null
 }
 
@@ -150,9 +198,19 @@ const downloadExcel = async () => {
 
   const { baseURL } = $axios?.defaults || {}
 
-  const idsToString = ids.value.join(',')
+  const idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
+  const searchParams = new URLSearchParams()
+  searchParams.append('search', loadedData.value.search)
+  if (loadedData.value.filters && loadedData.value.filters.length) {
+	loadedData.value.filters.forEach(filter => {
+		filter.values.forEach(value => {
+			searchParams.append(`${filter.key}[]`, value.toString())
+		})
+	})
+  }
+  const queryParams = idsToString == 'all' ? searchParams.toString() : '';
 
-  const url = `${baseURL}/export/bookings/${idsToString}`
+  const url = `${baseURL}/export/bookings/${idsToString}?${queryParams}`
 
   let date = new Date();
   let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
@@ -167,9 +225,15 @@ const downloadExcel = async () => {
     })
     .catch(console.error)
 
-  ids.value = []
+  resetSelection()
 
   toggleDownload()
+}
+
+const resetSelection = () => {
+	ids.value = []
+
+	refTable.value?.resetSelectAll()
 }
 
 const reload = () => {

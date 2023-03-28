@@ -36,7 +36,7 @@ export default {
     },
     import: {
       title: 'Caricamento dei Medici',
-      info_download: 'Si prega di scarica il file di esemprio per il caricamento dei medici',
+      info_download: 'Si prega di scarica il file di esempio per il caricamento dei medici',
       success: 'Il caricamento è avennuto con successo',
       file: 'File',
     }

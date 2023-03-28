@@ -1,6 +1,6 @@
 <template>
   <DataTable ref="refTable" :cols="cols" url="/users" :query-params="{ structure_data_id: props.structureId }" local-prefix="users.list." class="mt-5">
-    <template #header>
+    <template #header v-if="!props.readonly">
       <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="() => user.id = null">
         {{ $t('add') }} 
       </v-btn>
@@ -28,7 +28,8 @@ import FullDialog from '../common/FullDialog.vue'
 import StructureUsersEdit from './StructureUsersEditComponent.vue'
 
 interface Props {
-  structureId?: number | undefined,
+  structureId?: number | null,
+  readonly?: boolean | undefined
 }
 
 const props = withDefaults(defineProps<Props>(), {})

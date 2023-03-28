@@ -10,6 +10,11 @@ const adminRoles = [
   UserTypes.FONDO
 ]
 
+const structureRoles = [
+  UserTypes.STRUTTURA,
+  UserTypes.UTENTE
+]
+
 // const structureCompletedStatuses = [
 //   StructureStatusEnum.COMPLETED,
 //   StructureStatusEnum.NOT_COMPLETED,
@@ -33,17 +38,19 @@ export const useUsersStore = defineStore('users', () => {
     structurePostalCode: null,
     structureVatNumber: null,
     structureProvince: null,
-    structureCity: null
+    structureCity: null,
+    deletedAt: null
   })
 
   // Getters/Computed
 
-  const isLogged = computed(() => !!userDetails.value.id)
+  const isLogged = computed(() => !!userDetails.value.id && !userDetails.value.deletedAt)
   const isAdmin = computed(() => !!userDetails.value.id && adminRoles.includes(userDetails.value.type || 0))
   const isFondo = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.FONDO)
   const isBackoffice = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.BACKOFFICE)
   const isStruttura = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.STRUTTURA)
   const isUtente = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.UTENTE)
+  const isStructureOrUser = computed(() => !!userDetails.value.id && structureRoles.includes(userDetails.value.type || 0))
   const role = computed(() => !!userDetails.value.id && userDetails.value.type === UserTypes.FONDO ? 'Fondo' : !!userDetails.value.id && userDetails.value.type === UserTypes.BACKOFFICE ? 'Admin' : !!userDetails.value.id && userDetails.value.type === UserTypes.STRUTTURA ?'Struttura' : 'Utente')
   const hasAccesses = computed(() => !!userDetails.value.accesses)
   
@@ -66,10 +73,14 @@ export const useUsersStore = defineStore('users', () => {
     () => isAdmin.value || userDetails.value.structureStatus === StructureStatusEnum.COMPLETED
   )
 
+  const structureClosed = computed(
+    () => isAdmin.value || userDetails.value.structureStatus === StructureStatusEnum.CLOSED
+  )
+
   const structureTypes = computed(
     () => {
       if (isStruttura.value || isUtente.value ){
-      return  userDetails.value.structureCompanies.map((company) => company.type)
+      return  userDetails.value.structureCompanies.map((company: any) => company.type)
       }
     }
   )
@@ -79,7 +90,7 @@ export const useUsersStore = defineStore('users', () => {
   const assignUserDetails = (response: LoginResponse, update: boolean = false) => {
     const _data = {} as UserData
     const { jwt } = response
-    const { email, id, name, surname, type, structure_data, accesses } = response.data
+    const { email, id, name, surname, type, structure_data, accesses, deleted_at } = response.data
     const { id: structureId, status: structureStatus, code: structureCode, business_name: structureBusinessName, 
             city: structureCity, vat_number: structureVatNumber, address: structureAddress, postal_code: structurePostalCode, 
             province: structureProvince, structure_types: structureCompanies } = structure_data || {}
@@ -88,7 +99,7 @@ export const useUsersStore = defineStore('users', () => {
       Object.assign(
         _data,
         { authToken: jwt },
-        { email, id, name, surname, type, structureId, structureStatus, accesses, 
+        { email, id, name, surname, type, structureId, structureStatus, accesses, deleted_at, 
           structureCode, structureBusinessName, structureCity, structureVatNumber, structureAddress, structureCompanies }
       )
     } else {
@@ -105,6 +116,7 @@ export const useUsersStore = defineStore('users', () => {
           structureStatus: structureStatus || userDetails.value.structureStatus,
           structureCompanies: structureCompanies || userDetails.value.structureCompanies,
           accesses: accesses || userDetails.value.accesses,
+          deletedAt: deleted_at || userDetails.value.deletedAt,
           structureCode: structureCode || userDetails.value.structureCode,
           structureBusinessName: structureBusinessName || userDetails.value.structureBusinessName,
           structureCity: structureCity || userDetails.value.structureCity,
@@ -129,6 +141,7 @@ export const useUsersStore = defineStore('users', () => {
   return {
     assignUserDetails,
     isAdmin,
+    isStructureOrUser,
     isFondo,
     isBackoffice,
     isStruttura,
@@ -143,6 +156,7 @@ export const useUsersStore = defineStore('users', () => {
     structureNotApproved,
     structureNotCompleted,
     structureCompleted,
+    structureClosed,
     structureTypes
   }
 }, {

@@ -1,13 +1,13 @@
 <template>
   <DataTable ref="refTable" :cols="cols" url="/doctors" local-prefix="doctors.list." class="mt-5">
     <template #header>
-      <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="() => doctor.id = null">
+      <v-btn v-if="usersStore.structureCompleted || usersStore.isBackoffice" class="ml-3" variant="flat" color="koperniko-primary" @click="() => doctor.id = null">
         {{ $t('add') }} 
       </v-btn>
       <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading=isDownloading   >
         {{ $t('download') }} 
       </v-btn>
-      <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading=isLoading   >
+      <v-btn  v-if="usersStore.structureCompleted || usersStore.isBackoffice"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading=isLoading   >
         {{ $t('upload') }} 
       </v-btn>
     </template>

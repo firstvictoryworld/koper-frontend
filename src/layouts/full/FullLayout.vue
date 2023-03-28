@@ -8,9 +8,10 @@
     <v-main>
       <v-container fluid class="page-wrapper">
         <RouterView />
-        
+        <div class="footer">
+          <p>V.{{ version }}</p>
+        </div>
       </v-container>
-      <p style="text-align:center; padding:5;">V.{{ version }}</p>
     </v-main>
   </v-app>
 </template>
@@ -25,3 +26,15 @@ import { useCustomizerStore } from '@/stores/customizer'
 const customizer = useCustomizerStore()
 const version = import.meta.env.VITE_APP_VERSION
 </script>
+
+<style>
+.footer {
+  position:absolute; 
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  padding-bottom:5;
+}
+</style>
+

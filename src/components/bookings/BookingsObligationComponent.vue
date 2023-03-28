@@ -11,6 +11,7 @@
       per-page="infinite"
       local-prefix="bookings.edit.obligations."
       :no-searchable="true"
+      :parse-rows="parseRows"
       @loaded="({ rows }) => table.rows = rows"
     >
       <template #subheader>
@@ -36,6 +37,10 @@
       <template #col-required="{ row }">
         <v-icon v-if="row.required" color="green">mdi-check</v-icon>
         <v-icon v-else color="gray">mdi-x</v-icon>
+      </template>
+
+      <template #expandRow="{ row }">
+        <div class="fund-description" v-html="row.description || $t('bookings.edit.obligations.noDescription')" />
       </template>
     </DataTable>
   </CardContainer>
@@ -136,10 +141,14 @@ interface FileInterface {
 interface BookingObligationInterface {
   id: number | string
   name: string
+  description?: string
   code: string | number | null
   required: boolean
   lendings: LendingInterface[]
   file?: FileInterface | null
+  ids?: any[]
+  codes?: any[]
+  showDetails?: boolean
 }
 
 const props = defineProps<{
@@ -164,6 +173,7 @@ const obligationCols = reactive([
   { key: 'required' },
   { label: '', key: '', actions:
     [
+      { icon: 'mdi-information-outline', handler(row: BookingObligationInterface) { row.showDetails = !row.showDetails }, color: 'blue', btnProps: { class: 'mr-3' } },
       { icon: 'mdi-upload', handler(row: BookingObligationInterface) { add(row) }, color: 'yellow', btnProps: { loading: isDownloading, class: 'mr-3', disabled: !!props.readonly } , show: (row) => !row.file || !row.file.path },
       { icon: 'mdi-download', handler(row: BookingObligationInterface) { download(row) }, btnProps: { loading: isDownloading, class: 'mr-3' }, show: (row) => !!row.file && !!row.file.path },
       { icon: 'mdi-delete', handler(row: BookingObligationInterface) { remove(row) }, color: 'red', btnProps: { loading: isDeleting, disabled: (row) => !row.file || !row.file.path || !!props.readonly } },
@@ -220,6 +230,25 @@ const formDialogEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 const refTable: Ref<null | GlobalComponents['VForm']> = ref(null)
 
 // Functions
+const parseRows = (rows: any[]) => {
+  const _rows: any[] = []
+  rows.forEach((row) => {
+    const { code, id } = row
+    const i = code ? findIndex(_rows, _row => _row.id === row.id || (_row.name === row.name && _row.description === row.description)) : -1
+    if (i >= 0) {
+      if (!_rows[i].codes.includes(code)) {
+        _rows[i].codes.push(code)
+      }
+      if (!_rows[i].ids.includes(id)) {
+        _rows[i].ids.push(id)
+      }
+      return
+    }
+    _rows.push({ ...row, codes:[code], ids: [id] })
+  })
+  return _rows
+}
+
 const add = (obligation: BookingObligationInterface) => {
   dialog.obligation = obligation
   dialog.show = true
@@ -277,7 +306,10 @@ const upload = async () => {
   const data = {
     fund_id: dialog.obligation.id,
     fund_description: dialog.obligation.name,
-    booking_file_id: dialog.obligation.file?.booking_file_id
+    fund_description_long: dialog.obligation.description || '',
+    booking_file_id: dialog.obligation.file?.booking_file_id,
+    ids: dialog.obligation.ids,
+    codes: dialog.obligation.codes,
   }
 
   each(dialog.fields, (field, key) => {
@@ -319,3 +351,11 @@ onBeforeUnmount(() => {
   unwatchComplete()
 })
 </script>
+
+<style lang="scss">
+.fund-description {
+  ul {
+    padding-left: 15px
+  }
+}
+</style>
