@@ -1,5 +1,5 @@
 <template>
-  <DataTable ref="refTable" :cols="cols" url="/doctors" local-prefix="doctors.list." class="mt-5">
+  <DataTable ref="refTable" :cols="cols" url="/doctors" local-prefix="doctors.list." class="mt-5" @loaded="onLoaded" @selectAll="onSelectAll">
     <template #header>
       <v-btn v-if="usersStore.structureCompleted || usersStore.isBackoffice" class="ml-3" variant="flat" color="koperniko-primary" @click="() => doctor.id = null">
         {{ $t('add') }} 
@@ -62,11 +62,12 @@ import DoctorsImportComponent from './DoctorsImportComponent.vue'
 import JsFileDownloader from 'js-file-downloader'
 import { useUsersStore } from '@/stores/users';
 import { each } from 'lodash'
+import type { DatatableFilter, DatatableRowInterface } from '@/@types/dataTable'
 
 const usersStore = useUsersStore()
 
 const cols = reactive([
-  { key: 'checkbox' },
+  { key: 'checkbox', enableSelectAll: true },
   { key: 'id' },
   { key: 'name' },
   { key: 'surname' },
@@ -120,7 +121,13 @@ const [isLoading, toggleLoading] = useToggle()
 // Elements
 const refTable: Ref<null | DatatableComponent> = ref(null)
 const formDialogEl: Ref<null | GlobalComponents['VForm']> = ref(null)
-const ids = ref([])
+const ids = ref([] as any[])
+const allSelect = ref(false)
+const loadedData = ref({
+	search: '',
+	filters: [] as DatatableFilter[],
+	rows: [] as DatatableRowInterface[]
+});
 
 const formDialog = reactive({ 
   status: true,
@@ -128,6 +135,25 @@ const formDialog = reactive({
 })
 
 // Functions
+
+const onLoaded = (data: any) => {
+	loadedData.value = data
+	resetSelection()
+}
+
+const onSelectAll = (selected: boolean) => {
+	allSelect.value = !!selected
+
+	if (!!selected) {
+		selectAllRows()
+	} else {
+		ids.value = []
+	}
+}
+
+const selectAllRows = () => {
+	ids.value = loadedData.value?.rows ? loadedData.value.rows.map(row => row.id) : []
+}
 
 const show = (row: Record<string, any>) => {
   doctor.id = row.id || null
@@ -139,10 +165,19 @@ const downloadExcel = async () => {
   toggleDownload()
 
   const { baseURL } = $axios?.defaults || {}
+  const idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
+  const searchParams = new URLSearchParams()
+  searchParams.append('search', loadedData.value.search)
+  if (loadedData.value.filters && loadedData.value.filters.length) {
+	loadedData.value.filters.forEach(filter => {
+		filter.values.forEach(value => {
+			searchParams.append(`${filter.key}[]`, value.toString())
+		})
+	})
+  }
+  const queryParams = idsToString == 'all' ? searchParams.toString() : '';
 
-  const idsToString = ids.value.join(',')
-
-  const url = `${baseURL}/export/doctors/${idsToString}`
+  const url = `${baseURL}/export/doctors/${idsToString}?${queryParams}`
 
   let date = new Date();
   let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
@@ -157,7 +192,7 @@ const downloadExcel = async () => {
     })
     .catch(console.error)
 
-  ids.value = []
+  resetSelection()
 
   toggleDownload()
 }
@@ -174,6 +209,12 @@ const remove = async (row: Record<string, any>) => {
     .catch(console.error)
 
   toggleDelete()
+}
+
+const resetSelection = () => {
+	ids.value = []
+
+	refTable.value?.resetSelectAll()
 }
 
 const reload = () => {

@@ -226,7 +226,7 @@ const loadData = debounce(async () => {
       order: props.order || '', // TODO make order customizable
       direction: props.direction || '', // TODO make direction customizable
       ...(props.queryParams || {}),
-	        ...(getFilterQueryParams())
+	  ...(getFilterQueryParams())
     }
   })
     .then(({ data }) => {
