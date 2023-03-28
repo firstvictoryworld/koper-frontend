@@ -1,6 +1,6 @@
 
 <template>
-  <DataTable ref="refTable" :cols="cols" url="/reconciliations" local-prefix="reconciliations.list." class="mt-5" :no-searchable="true">
+  <DataTable ref="refTable" :cols="cols" url="/reconciliations" local-prefix="reconciliations.list." class="mt-5" :no-searchable="true" @loaded="onLoaded" @selectAll="onSelectAll">
     <template #header>
       <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloadingExport">
         {{ $t('download') }} 
@@ -93,6 +93,7 @@ import { useToggle } from '@vueuse/shared'
 import JsFileDownloader from 'js-file-downloader'
 import { axiosInjectKey } from '@/utils/axios'
 import { useUsersStore } from '@/stores/users'
+import type { DatatableFilter } from '@/@types/dataTable'
 
 const userStore = useUsersStore()
 const $axios = inject(axiosInjectKey)
@@ -104,7 +105,7 @@ const [isDownloadingInvoices, toggleDownloadInvoices] = useToggle()
 
 // Values
 const cols = reactive([
-  { key: 'checkbox' },
+  { key: 'checkbox', enableSelectAll: true  },
   ...(userStore.isAdmin ? [
     { key: 'structure' },
     { key: 'convention_code' },
@@ -129,9 +130,33 @@ const dialog = reactive({
 
 // Elements
 const refTable: Ref<null | DatatableComponent> = ref(null)
-const ids = ref([])
+const ids = ref([] as any[])
+const allSelect = ref(false)
+const loadedData = ref({
+	search: '',
+	filters: [] as DatatableFilter[],
+	rows: [] as DatatableRowInterface[]
+});
 
 // Functions
+const onLoaded = (data: any) => {
+	loadedData.value = data
+	resetSelection()
+}
+
+const onSelectAll = (selected: boolean) => {
+	allSelect.value = !!selected
+
+	if (!!selected) {
+		selectAllRows()
+	} else {
+		ids.value = []
+	}
+}
+
+const selectAllRows = () => {
+	ids.value = loadedData.value?.rows ? loadedData.value.rows.map(row => row.id) : []
+}
 
 const show = (row: DatatableRowInterface) => {
   dialog.paymentSelected = row
@@ -197,9 +222,19 @@ const downloadExcel = async () => {
 
   const { baseURL } = $axios?.defaults || {}
 
-  const idsToString = ids.value.join(',')
+  const idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
+	const searchParams = new URLSearchParams()
+	searchParams.append('search', loadedData.value.search)
+	if (loadedData.value.filters && loadedData.value.filters.length) {
+		loadedData.value.filters.forEach(filter => {
+			filter.values.forEach(value => {
+				searchParams.append(`${filter.key}[]`, value.toString())
+			})
+		})
+	}
+	const queryParams = idsToString == 'all' ? searchParams.toString() : '';
 
-  const url = `${baseURL}/export/reconciliations/${idsToString}`
+  const url = `${baseURL}/export/reconciliations/${idsToString}?${queryParams}`
 
   let date = new Date();
   let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
@@ -214,9 +249,15 @@ const downloadExcel = async () => {
     })
     .catch(console.error)
 
-  ids.value = []
+  resetSelection()
 
   toggleDownloadExport()
+}
+
+const resetSelection = () => {
+	ids.value = []
+
+	refTable.value?.resetSelectAll()
 }
 
 </script>
