@@ -250,6 +250,8 @@ const parseRows = (rows: any[]) => {
 }
 
 const add = (obligation: BookingObligationInterface) => {
+  dialog.fields.type_obligation.value = undefined
+  dialog.fields.file.value = undefined
   dialog.obligation = obligation
   dialog.show = true
 }

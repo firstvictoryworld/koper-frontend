@@ -107,6 +107,8 @@ export default {
         prescription_at: 'Data prescrizione',
         applicable_from: 'Applicabile da',
         obligations_title: 'Obblighi',
+        primary: 'Primaria',
+        pregnancy: 'Soggetto in gravidanza',
         documents: {
           title: 'Documentazione richiesta',
           name: 'Codice prestazione',

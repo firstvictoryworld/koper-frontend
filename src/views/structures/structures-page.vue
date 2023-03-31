@@ -176,7 +176,7 @@ const updateStatus = async (status: number) => {
 
   toggleLoading()
 
-  await $axios?.patch(`/registration-request/${structure.id}/status`, { status })
+  await $axios?.put(`/registration-request/${structure.id}/status`, { status })
     .then(() => {})
     .catch(console.error)
 

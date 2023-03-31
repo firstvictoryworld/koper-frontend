@@ -133,7 +133,7 @@ const reloadCurrentUser = debounce(async () => {
     })
     .catch(console.error)
 
-  await new Promise(r => setTimeout(r, 5000))
+  await new Promise(r => setTimeout(r, (import.meta.env.DEV ? 10 * 60 : 5) * 1000))
 
   reloadCurrentUser()
 }, 1000, { leading: true, trailing: false })

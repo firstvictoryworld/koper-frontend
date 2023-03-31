@@ -41,6 +41,11 @@
         {{ row.lending_agreement?.lending?.name }}
       </template>
 
+      <template #col-primary="{ row }">
+        <v-icon v-if="row.primary" color="green">mdi-check</v-icon>
+        <span v-else />
+      </template>
+
       <template #totals>
         <div class="text-right">
           <hr class="my-3" />
@@ -105,8 +110,18 @@
                   <v-select v-if="field.binds.type === 'select'" v-model.number="field.value"
                     :label="$t(`bookings.edit.lendings.${key}`)" v-bind="field.binds" />
 
-                  <v-text-field v-else-if="field.binds.type === 'number'" v-model.number="field.value"
+                  <v-text-field v-else-if="field.binds.type === 'number'" type="number" v-model.number="field.value"
                     :label="$t(`bookings.edit.lendings.${key}`)" v-bind="field.binds" class="hide-arrows" />
+
+                  <v-checkbox
+                    v-else-if="field.binds.type === 'checkbox'"
+                    v-model="field.value"
+                    :true-value="1"
+                    :false-value="0"
+                    :label="$t(`bookings.edit.lendings.${key}`)"
+                    hide-details="auto"
+                    v-bind="field.binds"
+                  />
 
                   <v-text-field v-else v-model="field.value" :label="$t(`bookings.edit.lendings.${key}`)"
                     v-bind="field.binds" />
@@ -142,7 +157,7 @@ import { axiosInjectKey } from '@/utils/axios'
 import { currencyValidation, requiredValidation } from '@/validation/rules'
 import { useToggle } from '@vueuse/shared'
 import { each, has } from 'lodash'
-import { computed, inject, reactive, ref, onBeforeUnmount, watch, type GlobalComponents, type Ref, onMounted } from 'vue'
+import { computed, inject, reactive, ref, onBeforeUnmount, watch, type GlobalComponents, type Ref, type ComputedRef } from 'vue'
 import type { VInput } from 'vuetify/lib/components/VInput/index'
 import LendingAgreementAutocompleteComponent from '../autocomplete/LendingAgreementAutocompleteComponent.vue'
 import DoctorLendingAutocompleteComponent from '../autocomplete/DoctorLendingAutocompleteComponent.vue'
@@ -152,16 +167,16 @@ import BookingsLendingDentistryComponent from './BookingsLendingDentistryCompone
 import CardContainer from '../common/CardContainer.vue'
 import SpecializationLendingAutocompleteComponent from '../autocomplete/SpecializationLendingAutocompleteComponent.vue'
 import BookingTypeEnum from '@/enums/BookingTypeEnum'
-import { useUsersStore } from '@/stores/users'
+// import { useUsersStore } from '@/stores/users'
 
 //store
-const usersStore = useUsersStore()
+// const usersStore = useUsersStore()
 
 interface DoctorInterface {
   id?: number
   name: string
   surname: string
-  lending?: LendingInterface
+  lendings?: Array<LendingInterface & { pivot: Record<string, any> }>
 }
 
 interface AgreededLandingInterface {
@@ -179,12 +194,15 @@ interface LendingCategoryInterface {
 interface SpecializationInterface {
   id?: number
   name: string
+  check_pregnancy: boolean
 }
 
 interface BookedLandingInterface {
   current_price: undefined | number
   iva: undefined | number
   quantity: number
+  primary: number
+  pregnancy: number
 }
 
 interface BookedLandingRequestInterface extends BookedLandingInterface {
@@ -248,6 +266,7 @@ const cols = reactive([
   { key: 'iva' },
   { key: 'quantity' },
   { key: 'current_price' },
+  { key: 'primary' },
   {
     label: '', key: '', actions:
       [
@@ -264,6 +283,8 @@ const dialog = reactive({
     current_price: { value: undefined, binds: { rules: [requiredValidation, currencyValidation], type: 'number', max: 1000000, ...defaultInputBinds } },
     iva: { value: undefined, binds: { rules: [requiredValidation], type: 'select', items: [0, 4, 5, 10, 22], ...defaultInputBinds } },
     quantity: { value: undefined, binds: { rules: [requiredValidation], type: 'number', ...defaultInputBinds } },
+    primary: { value: 0, binds: { rules: [], type: 'checkbox', ...defaultInputBinds }, show: () => showPrimary.value },
+    pregnancy: { value: 0, binds: { rules: [], type: 'checkbox', ...defaultInputBinds }, show: () => showPregnancy.value },
   } as BookedLandingFieldsInterface,
   lendings: {
     selected: undefined as undefined | AgreededLandingInterface,
@@ -318,6 +339,14 @@ const stampValue = computed(() => {
   return (table.data?.bollo?.total_stamp || 0).toFixed(0)
 })
 
+const showPrimary: ComputedRef<boolean> = computed(() => {
+  return /^(12|13)(\.[.0-9]+)?$/.test(dialog.lendings.selected?.lending?.code || '-1')
+})
+
+const showPregnancy: ComputedRef<boolean> = computed(() => {
+  return dialog.specializations.selected?.check_pregnancy || false
+})
+
 // Watchers
 const unwatchComplete = watch(
   () => completed.value,
@@ -327,35 +356,55 @@ const unwatchComplete = watch(
   }
 )
 
-const unwatchLending = watch(() => dialog.lendings.selected, (lending: undefined | AgreededLandingInterface) => {
-  if (!lending) { return }
-  if (codeFreeCost.includes(lending.lending?.fund_code || '')) { return }
-  if (dentistryCode.includes(lending.lending?.fund_code || '')) { checkTeethObbligation()}
-  dialog.fields.current_price.value = lending.agreeded_cost || 0
-  if (lending.lending?.fund_code == '4') {
-    disable.insert = true;
+const unwatchLending = watch(
+  () => dialog.lendings.selected,
+  (lending: undefined | AgreededLandingInterface, _prevLending: undefined | AgreededLandingInterface) => {
+    if (!lending) { return }
+    if (codeFreeCost.includes(lending.lending?.fund_code || '')) { return }
+    if (dentistryCode.includes(lending.lending?.fund_code || '')) {
+      checkTeethObbligation()
+    }
+
+    if ((!_prevLending || _prevLending.id !== lending.id) && lending?.agreeded_cost !== undefined) {
+      dialog.fields.current_price.value = lending.agreeded_cost
+    }
+
+    if (lending?.agreeded_cost !== undefined) {
+      dialog.fields.current_price.binds.max = lending.agreeded_cost
+    }
+    
+    if (lending.lending?.fund_code == '4') {
+      disable.insert = true;
+    }
   }
-})
+)
 
-const unwatchCurrentPrice = watch(() => dialog.fields.current_price.value, (value: undefined | number) => {
-  if (codeFreeCost.includes(dialog.lendings.selected?.lending?.fund_code || '')) { return }
-  const maxValue = dialog.lendings.selected?.agreeded_cost || 0
-  if (!value || value <= maxValue) { return }
-  dialog.fields.current_price.value = maxValue
-  if (dialog.id != null && dialog.doctors.selected) { return dialog.fields.current_price.value }
-  
-})
+const unwatchCurrentPrice = watch(
+  () => dialog.fields.current_price.value,
+  (value: undefined | number) => {
+    if (codeFreeCost.includes(dialog.lendings.selected?.lending?.fund_code || '')) { return }
 
-const unwatchDoctor = watch(() => dialog.doctors.selected, (doctor: undefined | DoctorInterface) => {
-  if (!doctor) { return }
-  if (dialog.id == null && doctor) { return dialog.fields.current_price.value = doctor?.lendings[0].pivot.cost ? doctor?.lendings[0].pivot.cost : dialog.lendings.selected?.agreeded_cost }
-})
+    if (value && value > dialog.fields.current_price.binds.max) {
+      dialog.fields.current_price.value = dialog.fields.current_price.binds.max
+    }
+  }
+)
 
-const unwatchReadonly = watch(()  => props.readonly, (readonly) =>{
-  console.log('readonly');
-  if(readonly){ readonlyAction.value = true}
-  else { readonlyAction.value = false }
-})
+const unwatchDoctor = watch(
+  () => dialog.doctors.selected,
+  (doctor: undefined | DoctorInterface) => {
+    if (dialog.id === null && doctor) {
+      dialog.fields.current_price.value = doctor?.lendings?.at(0)?.pivot.cost || dialog.lendings.selected?.agreeded_cost
+    }
+  }
+)
+
+const unwatchReadonly = watch(
+  () => props.readonly,
+  (readonly) => {
+    readonlyAction.value = !!readonly
+  }
+)
 
 // Functions
 const add = () => {
@@ -368,6 +417,8 @@ const add = () => {
     doctor: undefined,
     specialization: undefined,
     teeth: undefined,
+    primary: (table.data?.rows || []).length <= 0 ? 1 : 0,
+    pregnancy: 0
   })
 }
 
@@ -381,7 +432,7 @@ const show = (bookingLending: BookedLandingRequestInterface) => {
   dialog.doctors.selected = bookingLending.doctor
   dialog.specializations.selected = bookingLending.specialization
 
-  dialog.teeth = bookingLending?.teeth?.split(',').map(Number) || []
+  dialog.teeth = bookingLending?.teeth?.split(',').map(Number) || [] // FIXME sta roba qua va fatta nel backend
   dialog.id = bookingLending.id
 
   dialog.show = true
@@ -447,7 +498,7 @@ const checkTeethObbligation = async () => {
   
 await $axios?.post(`bookings/${props.bookingId}/checkTeeth/${ dialog.lendings.selected?.lending?.fund_code}`)
   .then(({ data }) => {
-    const { success, message, response } = data
+    const { success, response } = data
     if(success) {teethObbligation.show=true }
     
     if (response.dettaglio=='S'){
@@ -490,7 +541,6 @@ onBeforeUnmount(() => {
   unwatchCurrentPrice()
   unwatchDoctor()
   unwatchReadonly()
-  
 })
 
 
