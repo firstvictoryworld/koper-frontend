@@ -76,6 +76,7 @@ export default {
       city: 'Città',
       province: 'Provincia',
       current_account_no: 'C/C Numero',
+		unique_certificate_holder_title: 'Intestatario Certificazione Unica',
 		unique_certificate_holder_name: 'Nome',
 		unique_certificate_holder_surname: 'Cognome',
 		unique_certificate_holder_fiscal_code: 'Codice fiscale',

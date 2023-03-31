@@ -1,5 +1,5 @@
 <template>
-	<card-container :title="$t('registration.bankAccount.title')" :subtitle="$t('registration.bankAccount.subtitle')">
+	<card-container :title="$t('registration.bankAccount.unique_certificate_holder_title')">
 		<v-row>
 			<v-col v-for="key in keys" :key="key" cols="12" md="4">
 				<v-text-field v-bind:model-value="data[key]" hide-details="auto" color="koperniko-secondary"
