@@ -102,6 +102,11 @@ const bookingStatuses = [
 	BookingStatusEnum.IN_REVIEW,
 ]
 
+const bookingStatusReadOnly = [
+    BookingStatusEnum.CONCLUDED,
+    BookingStatusEnum.PRESENTED_TO_THE_FUND
+]
+
 const cols = reactive([
   { key: 'checkbox', enableSelectAll: true },
   { key: 'id' },
@@ -116,8 +121,8 @@ const cols = reactive([
   { key: 'status', enableFilter: true, filterOptions: bookingStatuses.map(status => ({ label: i18n.global.t(`bookings.status.${status}`), value: status })) },
   { label: '', key: '', actions:
     [
-      { icon: 'mdi-pencil', handler(row) { show(row) }, btnProps: { class: 'mr-3' }, show: (row) => row.status !=  BookingStatusEnum.PRESENTED_TO_THE_FUND },
-      { icon: 'mdi-eye', handler(row) { show(row) }, btnProps: {class: 'mr-3' }, show: (row) => row.status ===  BookingStatusEnum.PRESENTED_TO_THE_FUND },
+      { icon: 'mdi-pencil', handler(row) { show(row) }, btnProps: { class: 'mr-3' }, show: (row) => ! Object.values(bookingStatusReadOnly).includes(row.status) },
+      { icon: 'mdi-eye', handler(row) { show(row) }, btnProps: {class: 'mr-3' }, show: (row) => Object.values(bookingStatusReadOnly).includes(row.status)  },
       { icon: 'mdi-download', handler(row) { downloadPDF(row) }, btnProps: { loading: isDownloading } },
     ]
   },
@@ -170,7 +175,7 @@ const selectAllRows = () => {
 
 const show = (row: Record<string, any>) => {
   booking.id = row.id || null
-  readonly.value =  userStore.isFondo ? false : row.status === BookingStatusEnum.PRESENTED_TO_THE_FUND || !userStore.structureCompleted
+  readonly.value =  userStore.isFondo ? false : Object.values(bookingStatusReadOnly).includes(row.status) || !userStore.structureCompleted
   structureData.id = row.structure_data.id || null
 }
 

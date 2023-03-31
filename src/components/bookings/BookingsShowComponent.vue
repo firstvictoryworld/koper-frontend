@@ -235,8 +235,8 @@ const fields: Record<string, FieldInterface> = reactive({
   surname: { value: '', path: 'patient.surname', binds: { type: 'text', rules: [requiredValidation], readonly: true, ...defaultInputBinds } },
   separator2: { value: null, binds: { type: 'separator' }, show: () => isRecovery.value },
   recovery_reason: { value: '', binds: { type: 'text', rules: [requiredValidation], readonly: false, ...defaultInputBinds }, show: () => isRecovery.value },
-  recovery_from: { value: '', binds: { type: 'date', rules: [requiredValidation], readonly: false, ...defaultInputBinds }, show: () => isRecovery.value },
-  recovery_to: { value: '', binds: { type: 'date', rules: [requiredValidation], readonly: false, ...defaultInputBinds }, show: () => isRecovery.value },
+  recovery_from: { value: '', binds: { type: 'date', rules: [requiredValidation], disabled: defaultInputBinds.readonly, ...defaultInputBinds }, show: () => isRecovery.value },
+  recovery_to: { value: '', binds: { type: 'date', rules: [requiredValidation], disabled: defaultInputBinds.readonly, ...defaultInputBinds }, show: () => isRecovery.value },
 })
 
 const component = reactive({
