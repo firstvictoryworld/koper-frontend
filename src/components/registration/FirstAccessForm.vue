@@ -3,6 +3,7 @@
     <ContactForm v-for="(field, i) in fields.contacts" :key="field.type" v-model:data="fields.contacts[i]" class="mb-5" />
     <MogForm v-model:data="fields.mog" class="mb-5" />
     <BankAccountForm v-model:data="fields.bank" class="mb-5" />
+	<UniqueCertificateHolderForm v-model:data="fields.uniqueCertificateHolder" :readonly=false class="mb-5" />
 
     <v-card>
       <v-card-text>
@@ -28,6 +29,7 @@ import { axiosInjectKey } from '@/utils/axios'
 import { useToggle } from '@vueuse/shared'
 import { useUsersStore } from '@/stores/users'
 import { appReloadCurrentUserInjectionKey } from '@/utils/koperniko'
+import UniqueCertificateHolderForm from '../registration/UniqueCertificateHolderForm.vue'
 
 const $axios = inject(axiosInjectKey)
 const $reloadCurrentUser = inject(appReloadCurrentUserInjectionKey)
@@ -54,14 +56,21 @@ const fields = reactive({
   bank: { 
     accountholder: '',
     iban: '',
-    bank: '',
-    agency_number: '',
-    address: '',
-    house_number: '',
-    postal_code: '',
-    city: '',
-    province: '',
-    current_account_no: '',
+    // bank: '',
+    // agency_number: '',
+    // address: '',
+    // house_number: '',
+    // postal_code: '',
+    // city: '',
+    // province: '',
+    // current_account_no: '',
+  },
+  uniqueCertificateHolder: {
+	unique_certificate_holder_name: '',
+	unique_certificate_holder_surname: '',
+	unique_certificate_holder_fiscal_code: '',
+	unique_certificate_holder_birth_place: '',
+	unique_certificate_holder_birth_date: ''
   }
 })
 

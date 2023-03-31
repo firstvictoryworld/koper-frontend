@@ -3,7 +3,8 @@ export default {
     title: 'Registrazione',
     subtitle: 'Inserire i dati seguenti per richiedere il censimento di una nuova struttura sanitaria.',
     structureDetails: 'Dati anagrafici struttura',
-    structureContact: 'Dati referente struttura',
+	structurePublicDetails: 'Dati pubblici struttura',
+	structureContact: 'Responsabile struttura',
     organizationalType: 'Tipologia organizzazione',
     companyType: 'Tipo società',
     healthAuthorization: 'Autorizzazione sanitaria',
@@ -20,6 +21,8 @@ export default {
     region: 'Regione',
     website: 'Sito Web',
     phone_number: 'Numero di telefono',
+	toll_free_number: 'Numero verde',
+	public_email: 'Email pubblica',
     contact_name: 'Nome',
     contact_surname: 'Cognome',
     contact_email: 'Email',
@@ -27,7 +30,7 @@ export default {
     organization_type: 'Tipo organizzazione',
     withholding_tax: 'Ritenuta d\'acconto?',
     company_type: 'Tipo società',
-    health_authorization_number: 'Autorizzazione sanitaria',
+    health_authorization_number: 'No Autorizzazione sanitaria',
     health_authorization_released_by: 'Rilasciata da',
     health_authorization_date: 'Data rilascio',
     health_authorization_document: 'Documento autorizzazione',
@@ -56,6 +59,10 @@ export default {
       title: 'Modello di organizzazione e gestione',
       label: 'La struttura ha adottato il MOG in riferimento alla Legge 231/2001?',
     },
+	note: {
+		title: 'Note della Struttura Sanitaria:',
+		message: '*N.B Le eventuali note saranno valutate dal fondo per andare poi sul sito in corrispondenza della maschera della struttura.'
+	},
     bankAccount: {
       title: 'Dati per i rimborsi',
       subtitle: 'Coordinate bancarie per ottenere il rimborso delle spese anticipate dalla struttura sanitaria in favore degli assistiti FASCHIM nei limidi del nomenclatore-tariffario FASCHIM in vigore', 
@@ -69,6 +76,11 @@ export default {
       city: 'Città',
       province: 'Provincia',
       current_account_no: 'C/C Numero',
+		unique_certificate_holder_name: 'Nome',
+		unique_certificate_holder_surname: 'Cognome',
+		unique_certificate_holder_fiscal_code: 'Codice fiscale',
+		unique_certificate_holder_birth_place: 'luogo di nascita',
+		unique_certificate_holder_birth_date: 'data di nascita',
     },
     updated: 'I dati della struttura sono stati aggiornati'
   }
