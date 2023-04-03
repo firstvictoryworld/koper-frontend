@@ -10,6 +10,8 @@ export default {
     healthAuthorization: 'Autorizzazione sanitaria',
     structureType: 'Tipo struttura',
     disbursementSchemes: 'Regimi di erogazione',
+	facilityNote: 'Note della Struttura Sanitaria:',
+	facilityNoteSubtitle: '*N.B Le eventuali note saranno valutate dal fondo per andare poi sul sito in corrispondenza della maschera della struttura.',
     business_name: 'Ragione sociale',
     fiscal_code: 'Codice fiscale',
     vat_number: 'Partita IVA',
@@ -41,6 +43,7 @@ export default {
     disbursement_schemes_direct_form: 'La struttura sanitaria è disposta ad offrire in "forma diretta" anche il ticket che addebiterà direttamente al fondo?',
     disbursement_schemes_private_activities: 'Svolge attività private?',
     disbursement_schemes_private_intramoenia_activities: 'Svolge attività private intramoenia?',
+	note: 'Note',
     requestSent: 'La tua richiesta è stata inviata, riceverai una email di conferma. Ti preghiamo di attendere, il nostro personale verificherà la richiesta al più presto.',
     mogUpdate: 'Modello di organizzazione e gestione',
     contacts: {
@@ -59,10 +62,6 @@ export default {
       title: 'Modello di organizzazione e gestione',
       label: 'La struttura ha adottato il MOG in riferimento alla Legge 231/2001?',
     },
-	note: {
-		title: 'Note della Struttura Sanitaria:',
-		message: '*N.B Le eventuali note saranno valutate dal fondo per andare poi sul sito in corrispondenza della maschera della struttura.'
-	},
     bankAccount: {
       title: 'Dati per i rimborsi',
       subtitle: 'Coordinate bancarie per ottenere il rimborso delle spese anticipate dalla struttura sanitaria in favore degli assistiti FASCHIM nei limidi del nomenclatore-tariffario FASCHIM in vigore', 

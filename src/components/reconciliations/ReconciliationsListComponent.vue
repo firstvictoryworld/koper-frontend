@@ -167,7 +167,7 @@ const onSelectAll = (selected: boolean) => {
 }
 
 const selectAllRows = () => {
-	ids.value = loadedData.value?.rows ? loadedData.value.rows.map(row => row.id) : []
+	ids.value = loadedData.value?.rows ? loadedData.value.rows.map(row => row.payment_id) : []
 }
 
 const show = (row: DatatableRowInterface) => {
