@@ -28,14 +28,14 @@ import { computed } from 'vue';
 interface Record {
   accountholder: string
   iban: string
-  bank: string
-  agency_number: string
-  address: string
-  house_number: string
-  postal_code: string
-  city: string
-  province: string
-  current_account_no: string
+//   bank: string
+//   agency_number: string
+//   address: string
+//   house_number: string
+//   postal_code: string
+//   city: string
+//   province: string
+//   current_account_no: string
 }
 
 interface Props {
