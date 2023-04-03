@@ -22,6 +22,7 @@
 
           <v-radio-group v-else-if="field.radios" v-model="field.value" inline hide-details="auto"
             :rules="field.show === undefined || field.show() ? field.rules || [] : []"
+			:disabled="field.disabled"
             >
             <template v-slot:label>
               {{ $t(`registration.${field.label}`) }}
@@ -75,6 +76,14 @@
       </v-row>
     </card-container>
 
+	<card-container
+		:title="$t(`registration.note.title`)"
+	    :variant="undefined"
+	    :elevation="undefined"
+	    class="mb-5">
+		<div class="text-subtitle-1 mb-5">{{ $t('registration.note.message') }}</div>
+	</card-container>
+
     <v-alert v-if="!form.status && form.hasErrors" type="error" class="my-5">{{ $t('validation.errors.validationFail') }}</v-alert>
     <v-alert v-if="readonly && updated.show" type="success">{{ $t('registration.updated') }}</v-alert>
     <v-btn v-if="!requestSent || readonly" type="submit" class="d-block mx-auto mt-5" size="large" color="koperniko-primary"
@@ -115,7 +124,8 @@ interface FieldInterface {
   checkboxes?: RadioCheckboxInterface[]
   fullWidth?: boolean
   type?: 'text' | 'date' | 'file' | 'br'
-  show?: () => boolean
+  disabled?: boolean,
+  show?: () => boolean,
 }
 
 interface CardInterface {
@@ -163,10 +173,15 @@ const htmlStructure: HtmlStructureInterface = reactive({
         { label: 'province', value: '', rules: [requiredValidation], readonly: false },
         { label: 'postal_code', value: '', rules: [requiredValidation], readonly: false },
         { label: 'region', value: '', rules: [requiredValidation], readonly: false },
-        { label: 'website', value: '', rules: [], readonly: false },
-        { label: 'phone_number', value: '', rules: [requiredValidation], readonly: false },
       ]
     },
+	structurePublicDetails: {
+		fields: [
+			{ label: 'website', value: '', rules: [], readonly: false },
+			{ label: 'toll_free_number', value: '', rules: [requiredValidation], readonly: false },
+			{ label: 'public_email', value: '', rules: [requiredValidation], readonly: false },
+		]
+	},
     structureContact: {
       show: () => !props.structureId,
       fields: [
@@ -186,9 +201,17 @@ const htmlStructure: HtmlStructureInterface = reactive({
               // @ts-ignore FIXME
               value: OrganizationType[key],
             })), 
-            readonly: false 
+            readonly: false,
+			disabled: usersStore.isLogged && usersStore.isStruttura ? true : false
         },
-        { label: 'withholding_tax', value: true, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => hasRitenutaAcconto.value, readonly: false  },
+        { 
+			label: 'withholding_tax', value: true,
+			rules: [requiredValidation], fullWidth: true, 
+			radios: cloneDeep(booleanRadio),
+			show: () => hasRitenutaAcconto.value, 
+			readonly: false,
+			disabled: usersStore.isLogged && usersStore.isStruttura ? true : false
+		},
       ]
     },
     companyType: {
@@ -365,8 +388,11 @@ const loadData = async () => {
       htmlStructure.cards.structureDetails.fields[5].value = data.province
       htmlStructure.cards.structureDetails.fields[6].value = data.postal_code
       htmlStructure.cards.structureDetails.fields[7].value = data.region
-      htmlStructure.cards.structureDetails.fields[8].value = data.website
-      htmlStructure.cards.structureDetails.fields[9].value = data.phone_number
+		// htmlStructure.cards.structureDetails.fields[9].value = data.phone_number
+
+      htmlStructure.cards.structurePublicDetails.fields[0].value = data.website
+      htmlStructure.cards.structurePublicDetails.fields[1].value = data.toll_free_number
+      htmlStructure.cards.structurePublicDetails.fields[2].value = data.public_email
 
       htmlStructure.cards.organizationalType.fields[0].value = data.organization_type
       htmlStructure.cards.organizationalType.fields[1].value = data.withholding_tax === 1
