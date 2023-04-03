@@ -6,6 +6,7 @@
     <card-container
       v-for="(card, i) of htmlStructure.cards" :key="i"
       :title="$t(`registration.${card.title || i}`)"
+	  :subtitle="card.subtitle && $t(`registration.${card.subtitle}`)"
       :variant="structureId ? 'outlined' : undefined"
       :elevation="structureId ? '0' : undefined"
       class="mb-5" v-show="card.show === undefined || card.show()">
@@ -62,6 +63,19 @@
             v-model="htmlStructure.cards[i].fields[j].value"
           />
 
+		  <v-textarea
+            v-else-if="field.type === 'textarea'"
+            :disabled="!!field.readonly"
+            hide-details="auto"
+            color="koperniko-secondary"
+            variant="outlined"
+            :label="$t(`registration.${field.label}`)" :type="field.type || 'text'"
+            :rules="field.show === undefined || field.show() ? field.rules || [] : []"
+			:counter="field.counter"
+			:counter-value="field.counterValue"
+            v-model="htmlStructure.cards[i].fields[j].value"
+          />
+
           <v-text-field
             v-else
             :disabled="!!field.readonly"
@@ -75,14 +89,6 @@
         </v-col>
       </v-row>
     </card-container>
-
-	<card-container
-		:title="$t(`registration.note.title`)"
-	    :variant="undefined"
-	    :elevation="undefined"
-	    class="mb-5">
-		<div class="text-subtitle-1 mb-5">{{ $t('registration.note.message') }}</div>
-	</card-container>
 
     <v-alert v-if="!form.status && form.hasErrors" type="error" class="my-5">{{ $t('validation.errors.validationFail') }}</v-alert>
     <v-alert v-if="readonly && updated.show" type="success">{{ $t('registration.updated') }}</v-alert>
@@ -123,13 +129,16 @@ interface FieldInterface {
   radios?: RadioCheckboxInterface[]
   checkboxes?: RadioCheckboxInterface[]
   fullWidth?: boolean
-  type?: 'text' | 'date' | 'file' | 'br'
+  type?: 'text' | 'textarea' | 'date' | 'file' | 'br'
+  counter?: boolean
+  counterValue?: number
   disabled?: boolean,
   show?: () => boolean,
 }
 
 interface CardInterface {
   title?: string
+  subtitle?: string
   fields: FieldInterface[]
   show?: () => boolean
 }
@@ -268,6 +277,12 @@ const htmlStructure: HtmlStructureInterface = reactive({
         { label: 'mog.label', value: null, rules: [requiredValidation], fullWidth: true, radios: cloneDeep(booleanRadio), show: () => props.structureId  },
       ]
     },
+	facilityNote: {
+		subtitle: 'facilityNoteSubtitle',
+		fields: [
+			{ label: 'note', value: '', type: 'textarea', counter: true, counterValue: 250, rules:[(v: string) => v.length <= 250 || 'Max 250 characters'], fullWidth: true, readonly: false }
+		]
+	}
   }
 })
 
@@ -415,6 +430,7 @@ const loadData = async () => {
 
       htmlStructure.cards.mogUpdate.fields[0].value = data.mog === 1
 
+	  htmlStructure.cards.facilityNote.fields[0].value = data.notes && data.notes.length ? data.notes[0].note : ''
     })
     .catch(console.error)
 
