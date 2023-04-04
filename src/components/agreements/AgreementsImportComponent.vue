@@ -47,7 +47,13 @@ import JsFileDownloader from 'js-file-downloader'
 import { useUsersStore } from '@/stores/users';
 import { each } from 'lodash'
 
+interface Props {
+	structure_data_id: null|number
+}
+
 const usersStore = useUsersStore()
+
+const props = defineProps<Props>()
 
 const defaultInputBinds = {
   variant: 'outlined',
@@ -135,7 +141,10 @@ const handleSubmit = async () => {
   })
 
 
-  $axios?.post(path, data, {
+  $axios?.post(path, {
+	...data,
+	structure_data_id: props.structure_data_id || undefined
+  }, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }

@@ -1,6 +1,7 @@
 
 type DatatableActionFunctionType = (row: DatatableRowInterface) => void
 type DatatableShowFunctionType = (row: DatatableRowInterface) => boolean
+type DatatableLoadingFunctionType = (row: DatatableRowInterface) => boolean
 type DataTableBtnPropType = string | number | boolean | any[] | ((row: DatatableRowInterface) => any)
 
 interface DatatableActionInterface {
@@ -9,6 +10,7 @@ interface DatatableActionInterface {
   color?: string
   handler: DatatableActionFunctionType
   show?: DatatableShowFunctionType
+  loading?: DatatableLoadingFunctionType
 }
 
 export interface DatatableColInterface {

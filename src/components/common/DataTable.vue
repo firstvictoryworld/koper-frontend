@@ -53,6 +53,7 @@
                   <v-btn v-for="(btn, k) of col.actions" :key="`${i}-${j}-${k}`"
                     icon
                     :color="btn.color || 'koperniko-primary'"
+					:loading="btn.loading ? btn.loading(row) : false"
                     density="comfortable"
                     v-bind="btn.btnProps"
                     v-show="!!btn.show ? btn.show(row) : true"
