@@ -7,7 +7,7 @@
       <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloading" :disabled="disable" >
         {{ $t('download') }} 
       </v-btn>
-      <v-btn  v-if="usersStore.structureCompleted || usersStore.isBackoffice"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
+      <v-btn  v-if="usersStore.structureCompleted && !usersStore.isBackoffice"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
         {{ $t('upload') }} 
       </v-btn>
     </template>
@@ -58,7 +58,7 @@
   >
     <template #title>{{ $t('agreements.import.title') }}</template>
       
-    <AgreementsImportComponent v-if="uploadFile.value === true" @updated="() => reload()" />
+    <AgreementsImportComponent v-if="uploadFile.value === true" :structure_data_id="uploadFile.structure_data_id" @updated="() => reload()" />
   </FullDialog>
 </template>
 
@@ -78,6 +78,10 @@ import type { DatatableFilter, DatatableRowInterface } from '@/@types/dataTable'
 
 const usersStore = useUsersStore()
 
+// VueUse composables
+const [isDownloading, toggleDownload] = useToggle()
+const rowExporting = ref(null)
+
 const cols = reactive([
   { key: 'checkbox', enableSelectAll: true },
   { key: 'code' },
@@ -90,7 +94,9 @@ const cols = reactive([
   { label: '', key: '', actions:
     [
       { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status) },
-      { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status) }
+      { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status) },
+	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => true, btnProps: { class: 'ml-3 mr-3' } },
+	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => true, btnProps: { color: 'yellow' }, loading: (row) => rowExporting.value == row.id },
     ]
   },
 ] as DatatableColInterface[])
@@ -100,13 +106,11 @@ const agreement = reactive({
 })
 
 const uploadFile = reactive({
-  value: undefined as undefined|null|boolean
+  value: undefined as undefined|null|boolean,
+  structure_data_id: null as null|number
 })
 
 const $axios = inject(axiosInjectKey)
-
-// VueUse composables
-const [isDownloading, toggleDownload] = useToggle()
 
 // Computed
 const readonly = computed(() => {
@@ -152,24 +156,37 @@ const show = (row: Record<string, any>) => {
   agreement.id = row.id || null
 }
 
-const downloadExcel = async () => {
-  toggleDownload()
+const downloadExcel = async (row: DatatableRowInterface) => {
+  console.log('row', row);
+  if (row) {
+	rowExporting.value = row.id
+  } else {
+	toggleDownload()
+  }
+  console.log('expor', rowExporting.value);
 
   const { baseURL } = $axios?.defaults || {}
 
-  const idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
-	const searchParams = new URLSearchParams()
-	searchParams.append('search', loadedData.value.search)
-	if (loadedData.value.filters && loadedData.value.filters.length) {
-		loadedData.value.filters.forEach(filter => {
-			filter.values.forEach(value => {
-				searchParams.append(`${filter.key}[]`, value.toString())
-			})
-		})
-	}
-	const queryParams = idsToString == 'all' ? searchParams.toString() : '';
+  const searchParams = new URLSearchParams()
+  let idsToString = '';
+  if (row) {
+    searchParams.append('structure_data_id', row.structure_data_id);
+  } else {
+    idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
+    searchParams.append('search', loadedData.value.search)
+    if (loadedData.value.filters && loadedData.value.filters.length) {
+      loadedData.value.filters.forEach(filter => {
+        filter.values.forEach(value => {
+          searchParams.append(`${filter.key}[]`, value.toString())
+        })
+      })
+    }
+    
+  }
 
-  const url = `${baseURL}/export/agreements/${idsToString}?${queryParams}`
+  const queryParams = row || idsToString == 'all' ? searchParams.toString() : '';
+
+  const url = `${baseURL}/export/agreements/${!row ? idsToString : ''}?${queryParams}`
 
   let date = new Date();
   let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
@@ -186,7 +203,11 @@ const downloadExcel = async () => {
   
   resetSelection()
   
-  toggleDownload()
+  if (row) {
+		rowExporting.value = null
+  } else {
+		toggleDownload()
+	}
 }
 
 const resetSelection = () => {
