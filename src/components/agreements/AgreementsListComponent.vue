@@ -4,7 +4,7 @@
       <v-btn v-if="!readonly" :disabled="disable" class="ml-3" variant="flat" color="koperniko-primary" @click="() => agreement.id = null">
         {{ $t('add') }} 
       </v-btn>
-      <v-btn class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloading" :disabled="disable" >
+      <v-btn v-if="!usersStore.isAdmin" class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloading" :disabled="disable" >
         {{ $t('download') }} 
       </v-btn>
       <v-btn  v-if="usersStore.structureCompleted && !usersStore.isBackoffice"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
@@ -13,7 +13,7 @@
     </template>
 
     <template #col-checkbox="{row }">
-      <v-checkbox  hide-details="auto" color="koperniko-secondary"
+      <v-checkbox hide-details="auto" color="koperniko-secondary"
         variant="outlined"  density="compact" :value="row.id" v-model="ids"   
        />
     </template>
@@ -81,9 +81,10 @@ const usersStore = useUsersStore()
 // VueUse composables
 const [isDownloading, toggleDownload] = useToggle()
 const rowExporting = ref(null)
+const rowDownloading = ref(null)
 
 const cols = reactive([
-  { key: 'checkbox', enableSelectAll: true },
+  { key: 'checkbox', enableSelectAll: true, show: (!usersStore.isAdmin && !usersStore.isStructureOrUser) },
   { key: 'code' },
   { key: 'structure', },
   { key: 'lending_agreements_count', },
@@ -94,9 +95,10 @@ const cols = reactive([
   { label: '', key: '', actions:
     [
       { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status) },
-      { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status) },
-	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => usersStore.isBackoffice, btnProps: { class: 'ml-3 mr-3' } },
-	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isBackoffice, btnProps: { color: 'yellow' }, loading: (row) => rowExporting.value == row.id },
+      { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status), btnProps: { class: 'mr-3' } },
+	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => usersStore.isBackoffice, btnProps: { color: 'yellow', class: 'mr-3' } },
+	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isBackoffice, btnProps: { class: 'mr-3' }, loading: (row) => rowExporting.value == row.id },
+	  { icon: 'mdi-file-document-check', handler(row) { downloadPDF(row) }, show:(row) => usersStore.isBackoffice || usersStore.isStructureOrUser, loading: (row) => rowDownloading.value == row.id },
     ]
   },
 ] as DatatableColInterface[])
@@ -208,6 +210,25 @@ const downloadExcel = async (row: DatatableRowInterface) => {
   } else {
 		toggleDownload()
 	}
+}
+
+const downloadPDF = async (row: Record<string, any>) => {
+	rowDownloading.value = row.id
+
+	const { baseURL } = $axios?.defaults || {}
+	const url = `${baseURL}/agreements/${row.id}/download`
+
+	await new JsFileDownloader({
+		url,
+		filename: `agreement_${row.id}.pdf`,
+		withCredentials: true,
+		headers: [
+			{ name: 'Authorization', value: usersStore.bearerToken }
+		],
+	})
+		.catch(console.error)
+
+	rowDownloading.value = null
 }
 
 const resetSelection = () => {

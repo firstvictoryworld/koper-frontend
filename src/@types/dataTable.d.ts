@@ -21,7 +21,8 @@ export interface DatatableColInterface {
   actions?: DatatableActionInterface[]
   enableFilter?: boolean
   filterOptions?: { label: string, value: string | number }[]
-  enableSelectAll?: boolean
+  enableSelectAll?: boolean,
+  show?: boolean
 }
 
 export interface DatatableRowInterface {
