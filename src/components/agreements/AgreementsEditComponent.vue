@@ -6,7 +6,7 @@
   </v-alert>
 
   <Teleport v-if="component.mounted" to="#agreement-toolbar-target">
-    <v-btn v-if="!!agreementData.id" class="mr-3" size="large" color="red-accent-2" variant="plain" :loading="isDeleting" @click="() => remove()">
+    <v-btn v-if="!!agreementData.id && showDelete" class="mr-3" size="large" color="red-accent-2" variant="plain" :loading="isDeleting" @click="() => remove()">
       {{ $t('delete') }}
     </v-btn>
     <v-btn v-if="showConfirm" class="mr-3" size="large" color="blue-accent-2" :loading="isProceding" @click="() => confirm()">
@@ -108,6 +108,10 @@ const readonly = computed(() => {
   if (usersStore.isStruttura && agreementData.status === AgreementStatusEnum.DRAFT_STRUCTURE) { return false }
   if (!usersStore.isStruttura && agreementData.status === AgreementStatusEnum.DRAFT_FONDO) { return false }
   return true
+})
+
+const showDelete = computed(() => {
+	return agreementData.status != 0 && agreementData.status !== AgreementStatusEnum.ACTIVE && agreementData.status !== AgreementStatusEnum.REJECTED && agreementData.status !== AgreementStatusEnum.CLOSED
 })
 
 const showConfirm = computed(() => {
