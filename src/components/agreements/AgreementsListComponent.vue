@@ -7,7 +7,7 @@
       <v-btn v-if="!usersStore.isAdmin" class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloading" :disabled="disable" >
         {{ $t('download') }} 
       </v-btn>
-      <v-btn  v-if="usersStore.structureCompleted && !usersStore.isBackoffice"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
+      <v-btn  v-if="usersStore.structureCompleted && !usersStore.isAdmin"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
         {{ $t('upload') }} 
       </v-btn>
     </template>
@@ -96,9 +96,9 @@ const cols = reactive([
     [
       { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status) },
       { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status), btnProps: { class: 'mr-3' } },
-	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => usersStore.isBackoffice, btnProps: { color: 'yellow', class: 'mr-3' } },
-	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isBackoffice, btnProps: { class: 'mr-3' }, loading: (row) => rowExporting.value == row.id },
-	  { icon: 'mdi-file-document-check', handler(row) { downloadPDF(row) }, show:(row) => usersStore.isBackoffice || usersStore.isStructureOrUser, loading: (row) => rowDownloading.value == row.id },
+	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => usersStore.isAdmin, btnProps: { color: 'yellow', class: 'mr-3' } },
+	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isAdmin, btnProps: { class: 'mr-3' }, loading: (row) => rowExporting.value == row.id },
+	  { icon: 'mdi-file-document-check', handler(row) { downloadPDF(row) }, show:(row) => usersStore.isAdmin || usersStore.isStructureOrUser, loading: (row) => rowDownloading.value == row.id },
     ]
   },
 ] as DatatableColInterface[])
