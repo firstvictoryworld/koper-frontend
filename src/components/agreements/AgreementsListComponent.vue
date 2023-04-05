@@ -94,7 +94,7 @@ const cols = reactive([
   { key: 'status', },
   { label: '', key: '', actions:
     [
-      { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status) },
+      { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status), btnProps: { class: 'mr-3' } },
       { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status), btnProps: { class: 'mr-3' } },
 	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => usersStore.isAdmin, btnProps: { color: 'yellow', class: 'mr-3' } },
 	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isAdmin, btnProps: { class: 'mr-3' }, loading: (row) => rowExporting.value == row.id },
