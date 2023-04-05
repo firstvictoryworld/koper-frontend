@@ -36,7 +36,7 @@
         <thead>
           <tr>
             <DataTableHead v-for="(col) of cols" :col="col" :localPrefix="localPrefix" @filterToggle="onFilterToggle" @filterApply="onFilterApply">
-              <template v-if="col.enableSelectAll" #col-checkbox>
+              <template v-if="col.enableSelectAll && col.show" #col-checkbox>
                 <v-checkbox  hide-details="auto" color="koperniko-secondary"
                   variant="outlined"  density="compact" v-model="selectAll"/>
               </template>
@@ -49,24 +49,26 @@
             <tr>
               <td v-for="(col, j) of cols" :key="`td-${i}-${j}`" :style="{ width: !!col.actions ? '10px' : undefined }">
 
-                <div v-if="!!col.actions" class="d-flex justify-center align-center">
-                  <v-btn v-for="(btn, k) of col.actions" :key="`${i}-${j}-${k}`"
-                    icon
-                    :color="btn.color || 'koperniko-primary'"
-					:loading="btn.loading ? btn.loading(row) : false"
-                    density="comfortable"
-                    v-bind="btn.btnProps"
-                    v-show="!!btn.show ? btn.show(row) : true"
-                    :disabled="typeof btn.btnProps?.disabled === 'function' ? btn.btnProps.disabled(row) : btn.btnProps?.disabled"
-                    @click="() => btn.handler(row)">
-                    <v-icon size="17">{{ btn.icon }}</v-icon> 
-                  </v-btn>
-                </div>
+                <div v-if="col.show !== false">
+					<div v-if="!!col.actions" class="d-flex justify-center align-center">
+	                  <v-btn v-for="(btn, k) of col.actions" :key="`${i}-${j}-${k}`"
+	                    icon
+	                    :color="btn.color || 'koperniko-primary'"
+						:loading="btn.loading ? btn.loading(row) : false"
+	                    density="comfortable"
+	                    v-bind="btn.btnProps"
+	                    v-show="!!btn.show ? btn.show(row) : true"
+	                    :disabled="typeof btn.btnProps?.disabled === 'function' ? btn.btnProps.disabled(row) : btn.btnProps?.disabled"
+	                    @click="() => btn.handler(row)">
+	                    <v-icon size="17">{{ btn.icon }}</v-icon> 
+	                  </v-btn>
+	                </div>
 
-                <!-- Per customizzare i valori nelle celle usare lo slot: <template #col-id="{ row }"> ... </template> -->
-                <slot v-else :name="`col-${col.key}`" :row="row">
-                  {{ row[col.key] ?? '' }}
-                </slot>
+	                <!-- Per customizzare i valori nelle celle usare lo slot: <template #col-id="{ row }"> ... </template> -->
+	                <slot v-else :name="`col-${col.key}`" :row="row">
+	                  {{ (row[col.key] ?? '') }}
+	                </slot>
+				</div>
 
               </td>
 
