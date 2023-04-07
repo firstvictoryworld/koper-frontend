@@ -354,6 +354,10 @@ const handleSubmit = async () => {
     booleansAsIntegers: true,
     allowEmptyArrays: true
   })
+
+  console.log(fields.value);
+  console.log(formData);
+
   if(props.structureId){
     await $axios?.['put'](`/registration-request${ props.structureId ? `/${props.structureId}` : '' }`, fields.value, {
     
@@ -412,7 +416,7 @@ const loadData = async () => {
       htmlStructure.cards.organizationalType.fields[0].value = data.organization_type
       htmlStructure.cards.organizationalType.fields[1].value = data.withholding_tax === 1
 
-      htmlStructure.cards.companyType.fields[0].value = data.company_type
+      htmlStructure.cards.companyType.fields[0].value = data.company_type && data.company_type > 0 ? data.company_type : null
 
       htmlStructure.cards.healthAuthorization.fields[0].value = data.health_authorization_released_by
       htmlStructure.cards.healthAuthorization.fields[1].value = data.health_authorization_number
