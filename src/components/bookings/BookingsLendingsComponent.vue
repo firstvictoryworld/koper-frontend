@@ -42,7 +42,7 @@
       </template>
 
       <template #col-primary="{ row }">
-        <v-icon v-if="row.primary" color="green">mdi-check</v-icon>
+        <v-icon v-if="row.primary && primaryCheck(row.lending_agreement?.lending?.code || '-1')" color="green">mdi-check</v-icon>
         <span v-else />
       </template>
 
@@ -122,6 +122,20 @@
                     hide-details="auto"
                     v-bind="field.binds"
                   />
+                  
+                  <v-radio-group
+                    v-else-if="field.binds.type === 'radio'"
+                    v-model="field.value"
+                    :label="$t(`bookings.edit.lendings.${key}`)"
+                    hide-details="auto"
+                    v-bind="field.binds"
+                  >
+                    <v-radio
+                      v-for="v of field.values" :key="`radio.${key}.${v}`"
+                      :label="$t(`bookings.edit.lendings.${key}_value_${v}`)"
+                      :value="v"
+                    />
+                  </v-radio-group>
 
                   <v-text-field v-else v-model="field.value" :label="$t(`bookings.edit.lendings.${key}`)"
                     v-bind="field.binds" />
@@ -201,6 +215,7 @@ interface BookedLandingInterface {
   current_price: undefined | number
   iva: undefined | number
   quantity: number
+//   primary: undefined | number
   pregnancy: number
 }
 
@@ -217,6 +232,7 @@ type BookedLandingFieldsKeys = keyof BookedLandingInterface
 type BookedLandingFieldsInterface = {
   [key in BookedLandingFieldsKeys]: {
     value: any
+    values?: any[]
     show?: () => boolean
     size?: number
     binds: Record<string, any>
@@ -281,6 +297,7 @@ const dialog = reactive({
     current_price: { value: undefined, binds: { rules: [requiredValidation, currencyValidation], type: 'number', max: 1000000, ...defaultInputBinds } },
     iva: { value: undefined, binds: { rules: [requiredValidation], type: 'select', items: [0, 4, 5, 10, 22], ...defaultInputBinds } },
     quantity: { value: undefined, binds: { rules: [requiredValidation], type: 'number', ...defaultInputBinds } },
+    // primary: { value: undefined, values: [1, 0], binds: { rules: [requiredValidation], type: 'radio', ...defaultInputBinds }, show: () => showPrimary.value },
     pregnancy: { value: 0, binds: { rules: [], type: 'checkbox', ...defaultInputBinds }, show: () => showPregnancy.value },
   } as BookedLandingFieldsInterface,
   lendings: {
@@ -337,7 +354,7 @@ const stampValue = computed(() => {
 })
 
 const showPrimary: ComputedRef<boolean> = computed(() => {
-  return /^(12|13)(\.[.0-9]+)?$/.test(dialog.lendings.selected?.lending?.code || '-1')
+  return primaryCheck(dialog.lendings.selected?.lending?.code || '-1')
 })
 
 const showPregnancy: ComputedRef<boolean> = computed(() => {
@@ -404,6 +421,8 @@ const unwatchReadonly = watch(
 )
 
 // Functions
+const primaryCheck = (code: string) => /^(12|13)(\.[.0-9]+)?$/.test(code)
+
 const add = () => {
   show({
     id: null,
@@ -414,6 +433,7 @@ const add = () => {
     doctor: undefined,
     specialization: undefined,
     teeth: undefined,
+    // primary: !showPrimary.value ? 1 : undefined,
     pregnancy: 0
   })
 }
@@ -538,6 +558,5 @@ onBeforeUnmount(() => {
   unwatchDoctor()
   unwatchReadonly()
 })
-
 
 </script>
