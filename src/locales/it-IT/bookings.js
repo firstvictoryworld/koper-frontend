@@ -108,6 +108,8 @@ export default {
         applicable_from: 'Applicabile da',
         obligations_title: 'Obblighi',
         primary: 'Primaria',
+        primary_value_0: 'No',
+        primary_value_1: 'Si',
         pregnancy: 'Soggetto in gravidanza',
         documents: {
           title: 'Documentazione richiesta',
