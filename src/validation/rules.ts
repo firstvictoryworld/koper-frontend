@@ -41,7 +41,7 @@ export const codFiscaleValidation: ValidationRule = (value) => {
 }
 
 export const codFiscaleOrPivaValidation: ValidationRule = (value) => {
-  return !value || (pivaValidation(value) === true || codFiscaleValidation(value))
+  return pivaValidation(value) === true || codFiscaleValidation(value)
 }
 
 export const currencyValidation: ValidationRule = (value) => {
