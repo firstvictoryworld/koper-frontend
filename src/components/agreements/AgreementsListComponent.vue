@@ -4,7 +4,7 @@
       <v-btn v-if="!readonly" :disabled="disable" class="ml-3" variant="flat" color="koperniko-primary" @click="() => agreement.id = null">
         {{ $t('add') }} 
       </v-btn>
-      <v-btn v-if="!usersStore.isAdmin" class="ml-3" variant="flat" color="koperniko-primary" @click="() => downloadExcel()" :loading="isDownloading" :disabled="disable" >
+      <v-btn v-if="!usersStore.isAdmin" class="ml-3" variant="flat" color="koperniko-primary" @click="downloadExcel" :loading="isDownloading" :disabled="disable" >
         {{ $t('download') }} 
       </v-btn>
       <v-btn  v-if="usersStore.structureCompleted && !usersStore.isAdmin"  class="ml-3" variant="flat" color="koperniko-primary" @click="uploadFile.value = true" :loading="isLoading" :disabled="disable"  >
@@ -97,8 +97,8 @@ const cols = reactive([
       { icon: 'mdi-pencil', handler(row) { show(row) },  show:(row) => (AgreementStatusEnum.ACTIVE !== row.status && AgreementStatusEnum.CLOSED !== row.status), btnProps: { class: 'mr-3' } },
       { icon: 'mdi-eye', handler(row) { show(row) }, show:(row) => (AgreementStatusEnum.ACTIVE === row.status  || AgreementStatusEnum.CLOSED === row.status), btnProps: { class: 'mr-3' } },
 	  { icon: 'mdi-upload', handler(row) { uploadFile.value = true; uploadFile.structure_data_id = row.structure_data_id }, show:(row) => usersStore.isAdmin, btnProps: { color: 'yellow', class: 'mr-3' } },
-	  { icon: 'mdi-download', handler(row) { downloadExcel(row, true) }, show:(row) => usersStore.isAdmin, btnProps: { class: 'mr-3' }, loading: (row) => rowExporting.value == row.id },
-	  { icon: 'mdi-file-document-check', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isAdmin || usersStore.isStructureOrUser, loading: (row) => rowDownloading.value == row.id },
+	  { icon: 'mdi-download', handler(row) { downloadExcel(row) }, show:(row) => usersStore.isAdmin, btnProps: { class: 'mr-3' }, loading: (row) => rowExporting.value == row.id },
+	  { icon: 'mdi-file-document-check', handler(row) { downloadPDF(row) }, show:(row) => usersStore.isAdmin || usersStore.isStructureOrUser, loading: (row) => rowDownloading.value == row.id },
     ]
   },
 ] as DatatableColInterface[])
@@ -158,14 +158,10 @@ const show = (row: Record<string, any>) => {
   agreement.id = row.id || null
 }
 
-const downloadExcel = async (row: DatatableRowInterface, by_structure: boolean = false) => {
+const downloadExcel = async (row: DatatableRowInterface) => {
   console.log('row', row);
   if (row) {
-	if (by_structure) {
-		rowExporting.value = row.id
-	} else {
-		rowDownloading.value = row.id
-	}
+	rowExporting.value = row.id
   } else {
 	toggleDownload()
   }
@@ -176,9 +172,7 @@ const downloadExcel = async (row: DatatableRowInterface, by_structure: boolean =
   const searchParams = new URLSearchParams()
   let idsToString = '';
   if (row) {
-    if(by_structure) {
-		searchParams.append('structure_data_id', row.structure_data_id);
-	}
+    searchParams.append('structure_data_id', row.structure_data_id);
   } else {
     idsToString = allSelect.value && (loadedData.value.search || loadedData.value.filters.length) ? 'all' : ids.value.join(',')
     searchParams.append('search', loadedData.value.search)
@@ -194,7 +188,7 @@ const downloadExcel = async (row: DatatableRowInterface, by_structure: boolean =
 
   const queryParams = row || idsToString == 'all' ? searchParams.toString() : '';
 
-  const url = `${baseURL}/export/agreements/${!row ? idsToString : (row && !by_structure ? row.id : '')}?${queryParams}`
+  const url = `${baseURL}/export/agreements/${!row ? idsToString : ''}?${queryParams}`
 
   let date = new Date();
   let currentDate = date.getFullYear()+ "" + (date.getMonth() + 1) + "" + date.getDate() + "" + date.getHours() + "" + date.getMinutes();
@@ -212,11 +206,7 @@ const downloadExcel = async (row: DatatableRowInterface, by_structure: boolean =
   resetSelection()
   
   if (row) {
-		if (by_structure) {
-			rowExporting.value = null
-		} else {
-			rowDownloading.value = null
-		}
+		rowExporting.value = null
   } else {
 		toggleDownload()
 	}
