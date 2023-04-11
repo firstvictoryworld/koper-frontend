@@ -357,6 +357,7 @@
 
     <p class="mt-3">Data di validazione: {{date.valid_from }}</p>
     <p class="mt-3">Data di Emissione: {{ date.subscribed_at }}</p>
+    <p v-if="date.closed_at" class="mt-3">Data di Chiusura: {{ date.closed_at }}</p>
     <p class="mt-3">il Direttore FASCHIM Claudio Giammatteo </p>
 
 
@@ -364,7 +365,7 @@
     <v-divider />
 
     <v-checkbox :label="$t('agreements.contract.checkbox')" hide-details="auto" color="koperniko-secondary"
-      variant="outlined" :true-value="1" :false-value="0" density="compact" v-model="contract.accepted"
+      variant="outlined" density="compact" v-model="contract.accepted"
       :disabled="contract.disabled" />
     <v-btn :disabled="contract.disabled" class="d-block ml-auto" size="large" color="koperniko-primary"
       :loading="isLoading" @click="() => subscribe()">
@@ -376,6 +377,7 @@
 
 
 <script setup lang="ts">
+import AgreementStatusEnum from '@/enums/AgreementStatusEnum'
 import { computed, inject, onMounted, reactive } from 'vue'
 import CardContainer from '../common/CardContainer.vue'
 import { useUsersStore } from '@/stores/users'
@@ -390,7 +392,7 @@ const $axios = inject(axiosInjectKey)
 const [isDownloading, toggleDownload] = useToggle()
 
 const contract = reactive({
-  accepted: 0,
+  accepted: false,
   disabled: true,
   
 })
@@ -402,7 +404,8 @@ const agreement = reactive({
 const date = reactive({
   subscribed_at: null,
   updated_at: null,
-  valid_from: null
+  valid_from: null,
+  closed_at: null
 })
 
 const subscribe = async () => {
@@ -411,7 +414,6 @@ const subscribe = async () => {
   await $axios?.put(`/agreements/subscribeExistentAgreement`)
     .then(({ data }) => {
       const { status } = data.agreement
-      contract.accepted = 1 
       contract.disabled = true
     })
     .catch(console.error)
@@ -424,11 +426,12 @@ const confirmation = async () => {
 
   await $axios?.get(`/agreements/getExistentAgreement`)
     .then(({ data }) => {
-      const { updated_at, subscribed_at, valid_from } = data.agreement
+      const { subscribed_at, valid_from, closed_at } = data.agreement
       agreement.id = data.agreement.id
       date.valid_from = valid_from
       date.subscribed_at = subscribed_at
-      if (subscribed_at != null) {  contract.accepted = 1; contract.disabled = true }
+      date.closed_at = closed_at
+      if (subscribed_at != null && closed_at === null) {  contract.accepted = true; contract.disabled = true }
     })
     .catch(console.error)
 

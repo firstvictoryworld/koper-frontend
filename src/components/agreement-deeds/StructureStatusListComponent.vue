@@ -2,8 +2,15 @@
   
 
     <DataTable ref="refTable" :cols="cols" url="/registration-request" local-prefix="structures.registrations." class="mt-5">
+      <template #col-valid_from="{ row }">
+        {{ row.deed_of_agreements[0]?.valid_from }}
+      </template>
+
+      <template #col-valid_to="{ row }">
+        {{ row.deed_of_agreements[0]?.valid_to }}
+      </template>
+
       <template #col-closed="{ row }">
-      
         <v-checkbox hide-details="auto" color="koperniko-secondary"
           variant="outlined" :true-value="3" :false-value="0" density="compact" 
           :disabled="row.status === StructureStatusEnum.CLOSED" v-model="row.status"
@@ -89,6 +96,8 @@ const cols = reactive([
   { key: 'code' },
   { key: 'business_name' },
   { key: 'fiscal_code' },
+  { key: 'valid_from' },
+  { key: 'valid_to' },
   { key: 'closed' },
   { label: '', key: '', actions:
     [

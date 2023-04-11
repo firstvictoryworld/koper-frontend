@@ -10,7 +10,9 @@ export default {
       fiscal_code: 'Cod. Fiscale',
       vat_number: 'P. IVA',
       city: 'Città',
-      closed: 'Chiusa'
+      closed: 'Chiusa',
+      valid_from: 'Valida da',
+      valid_to: 'Valida a'
     },
     edit: {
       title: 'Dati struttura',

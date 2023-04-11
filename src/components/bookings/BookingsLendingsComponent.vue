@@ -215,7 +215,7 @@ interface BookedLandingInterface {
   current_price: undefined | number
   iva: undefined | number
   quantity: number
-  primary: undefined | number
+//   primary: undefined | number
   pregnancy: number
 }
 
@@ -281,7 +281,6 @@ const cols = reactive([
   { key: 'iva' },
   { key: 'quantity' },
   { key: 'current_price' },
-  { key: 'primary' },
   {
     label: '', key: '', actions:
       [
@@ -298,7 +297,7 @@ const dialog = reactive({
     current_price: { value: undefined, binds: { rules: [requiredValidation, currencyValidation], type: 'number', max: 1000000, ...defaultInputBinds } },
     iva: { value: undefined, binds: { rules: [requiredValidation], type: 'select', items: [0, 4, 5, 10, 22], ...defaultInputBinds } },
     quantity: { value: undefined, binds: { rules: [requiredValidation], type: 'number', ...defaultInputBinds } },
-    primary: { value: undefined, values: [1, 0], binds: { rules: [requiredValidation], type: 'radio', ...defaultInputBinds }, show: () => showPrimary.value },
+    // primary: { value: undefined, values: [1, 0], binds: { rules: [requiredValidation], type: 'radio', ...defaultInputBinds }, show: () => showPrimary.value },
     pregnancy: { value: 0, binds: { rules: [], type: 'checkbox', ...defaultInputBinds }, show: () => showPregnancy.value },
   } as BookedLandingFieldsInterface,
   lendings: {
@@ -434,7 +433,7 @@ const add = () => {
     doctor: undefined,
     specialization: undefined,
     teeth: undefined,
-    primary: !showPrimary.value ? 1 : undefined,
+    // primary: !showPrimary.value ? 1 : undefined,
     pregnancy: 0
   })
 }

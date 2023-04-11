@@ -36,7 +36,7 @@ const keys = computed(() => Object.keys(props.data) as (keyof RecordInterface)[]
 const fieldRules: Record<keyof RecordInterface, ValidationRule[]> = {
 	unique_certificate_holder_name: [],
 	unique_certificate_holder_surname: [],
-	unique_certificate_holder_fiscal_code: [requiredValidation, codFiscaleOrPivaValidation],
+	unique_certificate_holder_fiscal_code: [codFiscaleOrPivaValidation],
 	unique_certificate_holder_birth_place: [],
 	unique_certificate_holder_birth_date: [],
 }
