@@ -65,7 +65,8 @@ export const mainMenu = [
     ],
     allowedAccesses: UserAccesses.TARIFF,
     icon: 'mdi-cash-multiple',
-    disabled: import.meta.env.VITE_APP_ENV === 'staging'? false : true,
+    // disabled: import.meta.env.VITE_APP_ENV === 'staging'? false : true,
+    disabled : false
 
    
   },
