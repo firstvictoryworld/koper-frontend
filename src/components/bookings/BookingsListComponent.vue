@@ -178,7 +178,7 @@ const downloadPDF = async (row: Record<string, any>) => {
   toggleDownload()
 
   const { baseURL } = $axios?.defaults || {}
-  const url = `${baseURL}/bookings/${row.id}/download`
+  const url = `${baseURL}/bookings/${row.id}/download?search=&page=1&per_page=50&order=&direction=`
 
   await new JsFileDownloader({
       url,
