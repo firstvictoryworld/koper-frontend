@@ -342,7 +342,6 @@ const handleSubmit = async () => {
   if (!formEl.value) { return }
 
   let errors = await formEl.value.validate()
-  console.log('err', errors);
 
   if (!form.status) { return form.hasErrors = true }
 
