@@ -16,6 +16,16 @@
     <StructureUsersEdit v-if="user.id !== undefined" class="mt-5" :structure-id="props.structureId" :user-id="user.id" @updated="() => reload()" />
 
   </FullDialog>
+
+  <ConfirmDialog
+	  v-model:show="confirmDialogDetails.show"
+	  v-model:title="confirmDialogDetails.title"
+	  :message="$t('confirmDeleteMessage')"
+		:rejectLabel="confirmDialogDetails.rejectLabel"
+	  max-width="650"
+		@confirm="confirmDelete"
+		@cancel="cancelDelete"
+	  />
 </template>
 
 <script setup lang="ts">
@@ -26,6 +36,7 @@ import { useToggle } from '@vueuse/shared'
 import DataTable from '../common/DataTable.vue'
 import FullDialog from '../common/FullDialog.vue'
 import StructureUsersEdit from './StructureUsersEditComponent.vue'
+import ConfirmDialog from '../dialog/ConfirmDialog.vue'
 
 interface Props {
   structureId?: number | null,
@@ -55,6 +66,15 @@ const user = reactive({
 
 const $axios = inject(axiosInjectKey)
 
+const confirmDialogDetails = reactive({
+	show: false,
+	title: '',
+	message: '',
+	rejectLabel: 'close'
+})
+
+const deleteRowId = ref(null);
+
 // VueUse composables
 const [isLoading, toggleLoading] = useToggle(false)
 
@@ -75,16 +95,30 @@ const reload = () => {
 const remove = async (row: Record<string, any>) => {
   if (!row.id) { return }
 
+  deleteRowId.value = row.id;
   // TODO confirm operation
 
-  toggleLoading()
+  confirmDialogDetails.show = true;
+}
 
-  await $axios?.delete(`/users/${row.id}`)
-    .then(() => {
-      refTable.value?.loadData()
-    })
-    .catch(console.error)
+const confirmDelete = async () => {
+	confirmDialogDetails.show = false;
 
-  toggleLoading()
+	toggleLoading()
+
+	await $axios?.delete(`/users/${deleteRowId.value}`)
+		.then(() => {
+			refTable.value?.loadData()
+		})
+		.catch(console.error)
+
+
+	deleteRowId.value = null;
+	toggleLoading()
+}
+
+const cancelDelete = async () => {
+	confirmDialogDetails.show = false;
+	deleteRowId.value = null;
 }
 </script>

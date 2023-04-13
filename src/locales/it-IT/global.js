@@ -16,6 +16,7 @@ export default {
   warning: 'Attenzione',
   confirmRequired: 'Richiesta conferma',
   confirmMessage: 'Si conferma di voler procedere con le operazioni di modifica?',
+  confirmDeleteMessage: 'Stai per eliminare il seguente contenuto. Sicuro di voler continuare?',
   search: 'Cerca',
   reload: 'Aggiorna',
   back: 'Indietro',
