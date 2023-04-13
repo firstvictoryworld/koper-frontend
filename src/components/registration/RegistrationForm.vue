@@ -194,10 +194,10 @@ const htmlStructure: HtmlStructureInterface = reactive({
     structureContact: {
       show: () => !props.structureId,
       fields: [
-        { label: 'contact_name', value: '', rules: [requiredValidation], readonly: false  },
-        { label: 'contact_surname', value: '', rules: [requiredValidation], readonly: false  },
-        { label: 'contact_email', value: '', rules: [requiredValidation, emailValidation], readonly: false  },
-        { label: 'contact_phone_number', value: '', rules: [requiredValidation],readonly: false  },
+        { label: 'contact_name', value: '', rules: !props.structureId ? [requiredValidation] : [], readonly: false  },
+        { label: 'contact_surname', value: '', rules: !props.structureId ? [requiredValidation] : [], readonly: false  },
+        { label: 'contact_email', value: '', rules: !props.structureId ? [requiredValidation, emailValidation] : [], readonly: false  },
+        { label: 'contact_phone_number', value: '', rules: !props.structureId ? [requiredValidation] : [],readonly: false  },
       ]
     },
     organizationalType: {
@@ -339,11 +339,11 @@ const formEl: Ref<null | GlobalComponents['VForm']> = ref(null)
 const handleSubmit = async () => {
   if(props.structureId){ updated.show = false}
 
-  // if (!formEl.value) { return }
+  if (!formEl.value) { return }
 
-  // await formEl.value.validate()
+  let errors = await formEl.value.validate()
 
-  // if (!form.status) { return form.hasErrors = true }
+  if (!form.status) { return form.hasErrors = true }
 
   form.hasErrors = false
 
