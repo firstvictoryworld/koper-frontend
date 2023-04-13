@@ -17,7 +17,7 @@
           class="mr-3"
           @click="() => cancelHandler()"
         >
-          {{ $t('cancel') }}
+          {{ rejectLabel ? $t(rejectLabel) : $t('cancel') }}
         </v-btn>
 
         <v-btn
@@ -36,7 +36,8 @@
 interface Props {
   show?: boolean
   title?: string
-  message?: string
+  message?: string,
+  rejectLabel?: string,
 }
 
 const emit = defineEmits(['confirm', 'cancel', 'update:show'])

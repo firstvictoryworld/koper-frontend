@@ -61,6 +61,15 @@
     />
   </template>
 
+	<ConfirmDialog
+		  v-model:show="confirmDialogDetails.show"
+		  v-model:title="confirmDialogDetails.title"
+		  :message="$t('confirmDeleteMessage')"
+			:rejectLabel="confirmDialogDetails.rejectLabel"
+		  max-width="650"
+			@confirm="confirmDelete"
+			@cancel="cancelDelete"
+		  />
 </template>
 
 <script setup lang="ts">
@@ -76,6 +85,7 @@ import CardContainer from '../common/CardContainer.vue'
 import type { LendingInterface } from '../tariff/LendingComponent.vue'
 import LendingComponent from '../tariff/LendingComponent.vue'
 import { provideLendingsListObject, setupList, type LendingListInterface } from '../tariff/lendingLogic'
+import ConfirmDialog from '../dialog/ConfirmDialog.vue'
 
 const props = defineProps<{
   agreementId: null | number
@@ -98,6 +108,13 @@ const contract = reactive({
 
 const component = reactive({
   mounted: false
+})
+
+const confirmDialogDetails = reactive({
+	show: false,
+	title: '',
+	message: '',
+	rejectLabel: 'close'
 })
 
 provideLendingsListObject(lendings)
@@ -176,17 +193,27 @@ const confirm = async () => {
 }
 
 const remove = async () => {
-  toggleDelete()
+  confirmDialogDetails.show = true;
+}
 
-  await $axios?.put(`/agreements/${agreementData.id}/reject`)
-    .then(({ data }) => {
-      const { status } = data.agreement
-      agreementData.status = status
-      emit('updated')
-    })
-    .catch(console.error)
+const confirmDelete = async () => {
+	confirmDialogDetails.show = false;
 
-  toggleDelete()
+	toggleDelete()
+
+	await $axios?.put(`/agreements/${agreementData.id}/reject`)
+		.then(({ data }) => {
+			const { status } = data.agreement
+			agreementData.status = status
+			emit('updated')
+		})
+		.catch(console.error)
+
+	toggleDelete()
+}
+
+const cancelDelete = async () => {
+	confirmDialogDetails.show = false;
 }
 
 const loadData = async () => {
